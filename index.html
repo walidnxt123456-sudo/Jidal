@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Pi App</title>
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+    <script>
+        // Initialize the SDK
+        // sandbox: true is for local dev, but we will run this on Testnet initially
+        try {
+            Pi.init({ version: "2.0", sandbox: true }); 
+            alert("Pi SDK Initialized Successfully!");
+        } catch (err) {
+            alert("Pi SDK Failed to Init: " + err);
+        }
+    </script>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 50px; }
+        .status { color: green; font-weight: bold; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Hello, Pi Network!</h1>
+    <p>This app is hosted on Vercel.</p>
+    <div class="status">If you see the alert, the SDK is working.</div>
+</body>
+</html>
