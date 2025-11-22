@@ -18,7 +18,7 @@
     <!-- 4. Load Babel -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <!-- 5. Load Phosphor Icons (for cool graphics) -->
+    <!-- 5. Load Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
     <style>
@@ -26,28 +26,70 @@
             0%, 100% { box-shadow: 0 0 10px rgba(168, 85, 247, 0.2); }
             50% { box-shadow: 0 0 25px rgba(168, 85, 247, 0.6); }
         }
+        @keyframes pop-in {
+            0% { transform: scale(0); opacity: 0; }
+            80% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes bounce-dots {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
         .mic-active { animation: pulse-glow 2s infinite; }
+        .bubble-pop { animation: pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        .dot-1 { animation: bounce-dots 0.6s infinite 0.1s; }
+        .dot-2 { animation: bounce-dots 0.6s infinite 0.2s; }
+        .dot-3 { animation: bounce-dots 0.6s infinite 0.3s; }
+        
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .tv-scanline {
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
+            background-size: 100% 4px;
+            pointer-events: none;
+        }
     </style>
 </head>
-<body class="bg-gray-950 text-white font-sans antialiased selection:bg-purple-500 selection:text-white">
+<body class="bg-gray-950 text-white font-sans antialiased selection:bg-purple-500 selection:text-white overflow-hidden">
 
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // --- EXPANDED PERSONALITIES ---
+        // --- TYPEWRITER COMPONENT ---
+        // Renders text character by character
+        const Typewriter = ({ text, speed = 30 }) => {
+            const [displayed, setDisplayed] = useState('');
+            
+            useEffect(() => {
+                setDisplayed(''); // Reset on new text
+                let i = 0;
+                const timer = setInterval(() => {
+                    if (i < text.length) {
+                        setDisplayed((prev) => prev + text.charAt(i));
+                        i++;
+                    } else {
+                        clearInterval(timer);
+                    }
+                }, speed);
+                return () => clearInterval(timer);
+            }, [text]);
+
+            return <span>{displayed}</span>;
+        };
+
+        // --- PERSONALITIES WITH VOICE PREFS ---
         const PERSONALITIES = [
-            { id: 'elon', name: 'Elon Musk', role: 'Tech Mogul', color: 'bg-stone-800', border: 'border-stone-600', avatar: '🚀', voiceType: 'male', style: 'stuttering, futuristic, talks about mars.' },
-            { id: 'marx', name: 'Karl Marx', role: 'Theorist', color: 'bg-red-800', border: 'border-red-600', avatar: '☭', voiceType: 'male', style: 'passionate, talks about workers and capital.' },
-            { id: 'sherlock', name: 'Sherlock', role: 'Detective', color: 'bg-slate-700', border: 'border-slate-500', avatar: '🔍', voiceType: 'male', style: 'deductive, rapid, slightly arrogant.' },
-            { id: 'batman', name: 'Batman', role: 'Vigilante', color: 'bg-gray-900', border: 'border-gray-700', avatar: '🦇', voiceType: 'low', style: 'deep voice, gritty, justice-focused.' },
-            { id: 'ramsay', name: 'Gordon Ramsay', role: 'Chef', color: 'bg-orange-700', border: 'border-orange-500', avatar: '👨‍🍳', voiceType: 'male', style: 'angry, loud, talks about raw food.' },
-            { id: 'toddler', name: 'A Toddler', role: 'Agent of Chaos', color: 'bg-pink-500', border: 'border-pink-400', avatar: '👶', voiceType: 'child', style: 'simple words, distracted, mentions dinosaurs.' },
-            { id: 'socrates', name: 'Socrates', role: 'Philosopher', color: 'bg-emerald-800', border: 'border-emerald-600', avatar: '🏛️', voiceType: 'male', style: 'answers with questions, annoying.' },
-            { id: 'einstein', name: 'Einstein', role: 'Physicist', color: 'bg-blue-800', border: 'border-blue-600', avatar: '⚛️', voiceType: 'male', style: 'gentle, german accent, talks about relativity.' },
+            { id: 'elon', name: 'Elon Musk', role: 'Tech Mogul', color: 'bg-stone-800', border: 'border-stone-600', avatar: '🚀', voiceOffset: 0, pitch: 1, style: 'stuttering, futuristic, talks about mars.' },
+            { id: 'marx', name: 'Karl Marx', role: 'Theorist', color: 'bg-red-800', border: 'border-red-600', avatar: '☭', voiceOffset: 1, pitch: 0.8, style: 'passionate, talks about workers and capital.' },
+            { id: 'sherlock', name: 'Sherlock', role: 'Detective', color: 'bg-slate-700', border: 'border-slate-500', avatar: '🔍', voiceOffset: 2, pitch: 1.1, style: 'deductive, rapid, slightly arrogant.' },
+            { id: 'batman', name: 'Batman', role: 'Vigilante', color: 'bg-gray-900', border: 'border-gray-700', avatar: '🦇', voiceOffset: 3, pitch: 0.5, style: 'deep voice, gritty, justice-focused.' },
+            { id: 'ramsay', name: 'Gordon Ramsay', role: 'Chef', color: 'bg-orange-700', border: 'border-orange-500', avatar: '👨‍🍳', voiceOffset: 4, pitch: 1.2, style: 'angry, loud, talks about raw food.' },
+            { id: 'toddler', name: 'A Toddler', role: 'Agent of Chaos', color: 'bg-pink-500', border: 'border-pink-400', avatar: '👶', voiceOffset: 5, pitch: 1.6, style: 'simple words, distracted, mentions dinosaurs.' },
+            { id: 'socrates', name: 'Socrates', role: 'Philosopher', color: 'bg-emerald-800', border: 'border-emerald-600', avatar: '🏛️', voiceOffset: 6, pitch: 0.9, style: 'answers with questions, annoying.' },
+            { id: 'einstein', name: 'Einstein', role: 'Physicist', color: 'bg-blue-800', border: 'border-blue-600', avatar: '⚛️', voiceOffset: 7, pitch: 1.0, style: 'gentle, german accent, talks about relativity.' },
         ];
 
         const TONES = [
@@ -58,23 +100,21 @@
 
         function App() {
             // --- STATE ---
-            // START DIRECTLY IN GREENROOM
             const [appState, setAppState] = useState('greenRoom'); 
-            const [user, setUser] = useState({ username: 'Host', uid: 'guest' });
+            const [user, setUser] = useState({ username: 'Host', uid: 'guest', avatar: '🎤' });
             
-            // Show Config
             const [topic, setTopic] = useState('');
             const [tone, setTone] = useState('friendly');
             const [guests, setGuests] = useState({ guestA: null, guestB: null });
             
-            // Studio State
             const [messages, setMessages] = useState([]);
             const [inputText, setInputText] = useState('');
             const [isProcessing, setIsProcessing] = useState(false);
             const [audioEnabled, setAudioEnabled] = useState(true);
-            const [currentSpeaker, setCurrentSpeaker] = useState(null); // 'guestA', 'guestB', or null
+            const [currentSpeaker, setCurrentSpeaker] = useState(null); 
+            const [thinkingGuest, setThinkingGuest] = useState(null); // 'guestA' or 'guestB'
 
-            const messagesEndRef = useRef(null);
+            const [availableVoices, setAvailableVoices] = useState([]);
             const synth = window.speechSynthesis;
 
             // --- INITIALIZATION ---
@@ -83,60 +123,54 @@
                     try { window.Pi.init({ version: "2.0", sandbox: true }); } 
                     catch (err) { console.warn("Pi Init Error", err); }
                 }
-            }, []);
 
-            useEffect(() => {
-                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-            }, [messages, isProcessing]);
+                // Load Voices
+                const loadVoices = () => {
+                    const voices = synth.getVoices();
+                    if (voices.length > 0) {
+                        // Filter for English voices to ensure intelligibility
+                        const englishVoices = voices.filter(v => v.lang.startsWith('en'));
+                        setAvailableVoices(englishVoices.length ? englishVoices : voices);
+                    }
+                };
+                loadVoices();
+                if (synth.onvoiceschanged !== undefined) {
+                    synth.onvoiceschanged = loadVoices;
+                }
+            }, []);
 
             // --- TTS HELPER ---
             const speak = (text, character) => {
                 if (!audioEnabled || !synth) return;
-                
-                // Cancel current speech
                 synth.cancel();
 
                 const utterance = new SpeechSynthesisUtterance(text);
-                const voices = synth.getVoices();
                 
-                // Basic voice selection logic (works differently in every browser)
-                let selectedVoice = voices.find(v => v.lang.includes('en'));
-                
-                // Try to vary pitch/rate based on character metadata
-                if (character) {
-                   if (character.voiceType === 'child') {
-                       utterance.pitch = 1.4;
-                       utterance.rate = 1.1;
-                   } else if (character.voiceType === 'low') {
-                       utterance.pitch = 0.6;
-                       utterance.rate = 0.9;
-                   } else {
-                       utterance.pitch = 1.0;
-                   }
+                // Smart Voice Assignment
+                if (character && availableVoices.length > 0) {
+                    // Use the character's specific offset to pick a unique voice deterministically
+                    // If we run out of voices, wrap around using modulo
+                    const voiceIndex = character.voiceOffset % availableVoices.length;
+                    utterance.voice = availableVoices[voiceIndex];
+                    utterance.pitch = character.pitch || 1.0;
+                    
+                    // Slight rate randomization for natural feel
+                    utterance.rate = 0.9 + (Math.random() * 0.2); 
                 }
-
-                if (selectedVoice) utterance.voice = selectedVoice;
                 
-                // Set visual indicator
-                setCurrentSpeaker(character ? (character.id === guests.guestA?.id ? 'guestA' : 'guestB') : null);
-
+                setCurrentSpeaker(character ? (character.id === guests.guestA?.id ? 'guestA' : 'guestB') : 'host');
                 utterance.onend = () => setCurrentSpeaker(null);
                 synth.speak(utterance);
             };
 
             // --- HANDLERS ---
-
             const handleStartShow = () => {
                 setMessages([{
                     id: 'intro',
                     sender: 'system',
-                    text: `🎙️ Live from the Pi Studio! We are discussing "${topic}" in a ${tone} tone.`
+                    text: `🎙️ Show Starting... Topic: ${topic}`
                 }]);
                 setAppState('studio');
-            };
-
-            const handleEndShow = () => {
-                setAppState('summary');
             };
 
             const handleSendMessage = () => {
@@ -146,44 +180,59 @@
                 setMessages(prev => [...prev, newMsg]);
                 setInputText('');
                 setIsProcessing(true);
+                setCurrentSpeaker('host');
 
-                // --- MOCK AI LOGIC ---
-                // 1. Determine who answers first (Random)
                 const firstResponder = Math.random() > 0.5 ? 'guestA' : 'guestB';
                 const secondResponder = firstResponder === 'guestA' ? 'guestB' : 'guestA';
-
                 const g1 = guests[firstResponder];
                 const g2 = guests[secondResponder];
 
-                // 2. Simulate Response Delay
+                // GUEST 1 THINKING
                 setTimeout(() => {
-                    const text1 = generateResponse(g1, topic, inputText, tone, true);
-                    setMessages(prev => [...prev, { id: Date.now()+1, sender: firstResponder, name: g1.name, text: text1 }]);
-                    speak(text1, g1);
-
-                    // 3. Second guest responds to first guest
+                    setThinkingGuest(firstResponder);
+                    
+                    // GUEST 1 SPEAKS
                     setTimeout(() => {
-                        const text2 = generateResponse(g2, topic, text1, tone, false);
-                        setMessages(prev => [...prev, { id: Date.now()+2, sender: secondResponder, name: g2.name, text: text2 }]);
-                        speak(text2, g2);
-                        setIsProcessing(false);
-                    }, 2000 + (text1.length * 50)); // Wait based on length of first message
+                        setThinkingGuest(null);
+                        const text1 = generateResponse(g1, topic, inputText, tone, true);
+                        setMessages(prev => [...prev, { id: Date.now()+1, sender: firstResponder, name: g1.name, text: text1 }]);
+                        speak(text1, g1);
 
-                }, 1500);
+                        // GUEST 2 THINKING
+                        setTimeout(() => {
+                            setThinkingGuest(secondResponder);
+
+                            // GUEST 2 SPEAKS
+                            setTimeout(() => {
+                                setThinkingGuest(null);
+                                const text2 = generateResponse(g2, topic, text1, tone, false);
+                                setMessages(prev => [...prev, { id: Date.now()+2, sender: secondResponder, name: g2.name, text: text2 }]);
+                                speak(text2, g2);
+                                setIsProcessing(false);
+                            }, 2000); // Thinking time for guest 2
+
+                        }, 1000 + (text1.length * 50)); // Wait for guest 1 to finish
+
+                    }, 1500); // Thinking time for guest 1
+
+                }, 1000);
             };
 
             const generateResponse = (char, topic, context, tone, isFirst) => {
                 const starters = isFirst 
-                    ? ["Well, obviously", "Look,", "I must say,", "From my perspective,"]
-                    : ["That is nonsense!", "I agree, but", "You miss the point,", "Listen to me,"];
+                    ? ["Well,", "Look,", "I believe", "Actually,"]
+                    : ["That is wrong!", "I agree, but", "Nonsense!", "Listen,"];
                 
-                // Very simple mock logic to flavor text
-                let content = `I am thinking about ${topic}. ${char.style}`;
-                if (char.id === 'toddler') content = "Can I have a cookie? Also " + topic + " is boring.";
-                if (char.id === 'batman') content = "JUSTICE requires us to consider " + topic + " carefully.";
-                if (char.id === 'ramsay') content = "This opinion on " + topic + " is RAW! It's GARBAGE!";
+                let content = `I have strong thoughts on ${topic}. ${char.style}`;
+                if (char.id === 'toddler') content = "I want juice! " + topic + " is silly.";
+                if (char.id === 'batman') content = "JUSTICE demands we look at " + topic + ".";
+                if (char.id === 'ramsay') content = topic + " is RAW! DISGUSTING!";
                 
                 return `${starters[Math.floor(Math.random()*starters.length)]} ${content}`;
+            };
+
+            const getLastMessage = (sender) => {
+                return messages.filter(m => m.sender === sender).pop();
             };
 
             // --- VIEWS ---
@@ -198,81 +247,55 @@
                         </header>
 
                         <div className="max-w-3xl mx-auto w-full space-y-8 pb-20">
-                            
-                            {/* TOPIC SECTION */}
                             <section className="animate-fade-in">
                                 <label className="block text-purple-400 text-xs font-bold uppercase tracking-wider mb-2">Step 1: The Topic</label>
-                                <input 
-                                    type="text" 
-                                    value={topic}
-                                    onChange={(e) => setTopic(e.target.value)}
-                                    placeholder="e.g. Is a hotdog a sandwich?"
-                                    className="w-full bg-gray-800 border border-gray-700 rounded-xl p-4 text-lg focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500 transition-all placeholder:text-gray-600"
-                                />
+                                <input type="text" value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="e.g. Is a hotdog a sandwich?"
+                                    className="w-full bg-gray-800 border border-gray-700 rounded-xl p-4 text-lg focus:border-purple-500 focus:outline-none" />
                             </section>
 
-                            {/* GUEST SELECTOR */}
                             <section className="animate-fade-in delay-100">
                                 <label className="block text-purple-400 text-xs font-bold uppercase tracking-wider mb-2">Step 2: The Guests</label>
                                 <div className="grid grid-cols-2 gap-4 mb-4">
                                     {['guestA', 'guestB'].map((slot, idx) => (
-                                        <div key={slot} className={`p-4 rounded-xl border-2 transition-all cursor-default ${guests[slot] ? `${guests[slot].color} border-transparent` : 'bg-gray-800 border-dashed border-gray-700'}`}>
+                                        <div key={slot} className={`p-4 rounded-xl border-2 transition-all ${guests[slot] ? `${guests[slot].color} border-transparent` : 'bg-gray-800 border-dashed border-gray-700'}`}>
                                             <div className="text-xs text-white/50 mb-2 uppercase">Guest #{idx + 1}</div>
                                             {guests[slot] ? (
-                                                <div className="flex flex-col items-center">
+                                                <div className="flex flex-col items-center text-center">
                                                     <div className="text-4xl mb-2">{guests[slot].avatar}</div>
-                                                    <div className="font-bold text-center leading-tight">{guests[slot].name}</div>
+                                                    <div className="font-bold">{guests[slot].name}</div>
                                                     <button onClick={() => setGuests(prev => ({...prev, [slot]: null}))} className="mt-3 text-xs bg-black/20 hover:bg-black/40 px-3 py-1 rounded-full">Remove</button>
                                                 </div>
-                                            ) : (
-                                                <div className="text-center text-gray-500 text-sm py-4">Select Below</div>
-                                            )}
+                                            ) : ( <div className="text-center text-gray-500 text-sm py-4">Select Below</div> )}
                                         </div>
                                     ))}
                                 </div>
-                                
-                                {/* Guest Carousel/Grid */}
                                 <div className="flex gap-3 overflow-x-auto pb-4 hide-scrollbar snap-x">
                                     {PERSONALITIES.map(p => {
                                         const isSelected = guests.guestA?.id === p.id || guests.guestB?.id === p.id;
                                         return (
-                                            <button 
-                                                key={p.id}
-                                                disabled={isSelected}
-                                                onClick={() => !guests.guestA ? setGuests(prev => ({...prev, guestA: p})) : !guests.guestB ? setGuests(prev => ({...prev, guestB: p})) : null}
-                                                className={`snap-center flex-shrink-0 w-24 h-32 flex flex-col items-center justify-center p-2 rounded-xl border border-gray-700 bg-gray-800 transition-all ${isSelected ? 'opacity-30 grayscale' : 'hover:bg-gray-700 hover:scale-105'}`}
-                                            >
+                                            <button key={p.id} disabled={isSelected} onClick={() => !guests.guestA ? setGuests(prev => ({...prev, guestA: p})) : !guests.guestB ? setGuests(prev => ({...prev, guestB: p})) : null}
+                                                className={`snap-center flex-shrink-0 w-24 h-32 flex flex-col items-center justify-center p-2 rounded-xl border border-gray-700 bg-gray-800 transition-all ${isSelected ? 'opacity-30 grayscale' : 'hover:bg-gray-700'}`}>
                                                 <div className="text-3xl mb-2">{p.avatar}</div>
                                                 <div className="text-xs font-bold text-center">{p.name}</div>
-                                                <div className="text-[10px] text-gray-500 text-center leading-none mt-1">{p.role}</div>
                                             </button>
                                         )
                                     })}
                                 </div>
                             </section>
 
-                            {/* TONE SELECTOR */}
                             <section className="animate-fade-in delay-200">
                                 <label className="block text-purple-400 text-xs font-bold uppercase tracking-wider mb-2">Step 3: The Vibe</label>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                <div className="grid grid-cols-3 gap-3">
                                     {TONES.map(t => (
-                                        <button 
-                                            key={t.id}
-                                            onClick={() => setTone(t.id)}
-                                            className={`p-3 rounded-lg border text-left transition-all ${tone === t.id ? 'bg-purple-900/40 border-purple-500' : 'bg-gray-800 border-gray-700 hover:bg-gray-750'}`}
-                                        >
+                                        <button key={t.id} onClick={() => setTone(t.id)} className={`p-3 rounded-lg border text-left transition-all ${tone === t.id ? 'bg-purple-900/40 border-purple-500' : 'bg-gray-800 border-gray-700'}`}>
                                             <div className="font-bold text-sm mb-1">{t.label}</div>
-                                            <div className="text-xs text-gray-400">{t.desc}</div>
                                         </button>
                                     ))}
                                 </div>
                             </section>
 
-                            <button 
-                                disabled={!guests.guestA || !guests.guestB || !topic}
-                                onClick={handleStartShow}
-                                className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl font-bold text-lg shadow-lg shadow-purple-900/50 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:grayscale"
-                            >
+                            <button disabled={!guests.guestA || !guests.guestB || !topic} onClick={handleStartShow}
+                                className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl font-bold text-lg shadow-lg hover:scale-[1.02] transition-all disabled:opacity-50">
                                 Start Broadcast 🎙️
                             </button>
                         </div>
@@ -280,168 +303,127 @@
                 );
             }
 
-            // 2. THE STUDIO (Main Interface)
+            // 2. TV SCREEN STUDIO
             if (appState === 'studio') {
+                const hostMsg = getLastMessage('host');
+                const guestAMsg = getLastMessage('guestA');
+                const guestBMsg = getLastMessage('guestB');
+
                 return (
-                    <div className="fixed inset-0 bg-gray-950 flex flex-col">
-                        {/* HEADER */}
-                        <div className="h-14 bg-gray-900 border-b border-gray-800 flex justify-between items-center px-4 shrink-0">
-                            <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                                <span className="font-bold text-gray-200 text-sm">LIVE</span>
-                                <span className="text-xs text-gray-500 px-2 border-l border-gray-700 truncate max-w-[150px]">{topic}</span>
+                    <div className="fixed inset-0 bg-black flex flex-col relative">
+                        {/* TV Scanline Overlay */}
+                        <div className="absolute inset-0 tv-scanline z-10 pointer-events-none"></div>
+
+                        {/* Header */}
+                        <div className="absolute top-0 left-0 w-full p-4 z-20 flex justify-between items-start">
+                            <div className="flex items-center gap-2 bg-red-600 text-white px-3 py-1 rounded font-bold text-xs uppercase tracking-widest animate-pulse">
+                                Live
                             </div>
-                            <div className="flex gap-3">
-                                <button onClick={() => setAudioEnabled(!audioEnabled)} className={`text-xl ${audioEnabled ? 'text-purple-400' : 'text-gray-600'}`}>
-                                    <i className={`ph ${audioEnabled ? 'ph-speaker-high' : 'ph-speaker-slash'}`}></i>
-                                </button>
-                                <button onClick={handleEndShow} className="bg-red-500/10 text-red-500 text-xs font-bold px-3 py-1.5 rounded-md hover:bg-red-500 hover:text-white transition-colors">
-                                    END SHOW
-                                </button>
-                            </div>
+                            <button onClick={() => setAppState('greenRoom')} className="text-gray-500 hover:text-white bg-black/50 rounded-full p-2"><i className="ph ph-power text-xl"></i></button>
                         </div>
 
-                        {/* STAGE (Visuals) */}
-                        <div className="h-48 md:h-64 bg-gray-900/50 grid grid-cols-2 gap-4 p-4 items-end justify-items-center relative border-b border-gray-800 shrink-0">
-                            {/* Guest A */}
-                            <div className={`relative transition-all duration-300 ${currentSpeaker === 'guestA' ? 'scale-110 z-10' : 'scale-95 opacity-80'}`}>
-                                <div className={`w-24 h-24 md:w-32 md:h-32 rounded-full flex items-center justify-center text-5xl md:text-6xl border-4 shadow-xl ${guests.guestA.color} ${guests.guestA.border} ${currentSpeaker === 'guestA' ? 'shadow-purple-500/50' : ''}`}>
-                                    {guests.guestA.avatar}
-                                </div>
-                                <div className="mt-2 text-center">
-                                    <div className="font-bold text-sm">{guests.guestA.name}</div>
-                                    <div className={`text-[10px] uppercase font-bold tracking-widest ${currentSpeaker === 'guestA' ? 'text-green-400' : 'text-gray-500'}`}>
-                                        {currentSpeaker === 'guestA' ? 'SPEAKING' : 'LISTENING'}
+                        {/* MAIN TV AREA */}
+                        <div className="flex-1 relative p-4 flex flex-col justify-between bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-gray-900">
+                            
+                            {/* TOP: HOST */}
+                            <div className="flex flex-col items-center justify-start pt-8 relative z-0 h-1/3">
+                                <div className={`relative transition-all duration-300 ${currentSpeaker === 'host' ? 'scale-110' : 'scale-100'}`}>
+                                    <div className="w-20 h-20 rounded-full border-4 border-purple-500 bg-gray-800 flex items-center justify-center text-4xl shadow-2xl z-10 relative">
+                                        {user.avatar}
+                                    </div>
+                                    <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-purple-600 text-white text-[10px] font-bold px-2 rounded uppercase">
+                                        YOU
                                     </div>
                                 </div>
-                            </div>
-
-                            {/* Guest B */}
-                            <div className={`relative transition-all duration-300 ${currentSpeaker === 'guestB' ? 'scale-110 z-10' : 'scale-95 opacity-80'}`}>
-                                <div className={`w-24 h-24 md:w-32 md:h-32 rounded-full flex items-center justify-center text-5xl md:text-6xl border-4 shadow-xl ${guests.guestB.color} ${guests.guestB.border} ${currentSpeaker === 'guestB' ? 'shadow-purple-500/50' : ''}`}>
-                                    {guests.guestB.avatar}
-                                </div>
-                                <div className="mt-2 text-center">
-                                    <div className="font-bold text-sm">{guests.guestB.name}</div>
-                                    <div className={`text-[10px] uppercase font-bold tracking-widest ${currentSpeaker === 'guestB' ? 'text-green-400' : 'text-gray-500'}`}>
-                                        {currentSpeaker === 'guestB' ? 'SPEAKING' : 'LISTENING'}
+                                {hostMsg && (
+                                    <div className="mt-4 bg-purple-600 text-white p-4 rounded-2xl rounded-t-none max-w-xs text-center text-sm shadow-lg bubble-pop relative border border-purple-400">
+                                        "{hostMsg.text}"
+                                        <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-purple-600 rotate-45"></div>
                                     </div>
-                                </div>
+                                )}
                             </div>
 
-                            {/* VS Badge */}
-                            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/50 backdrop-blur px-2 py-1 rounded text-xs font-bold text-white/50 border border-white/10">
-                                VS
-                            </div>
-                        </div>
-
-                        {/* TRANSCRIPT / FEED */}
-                        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-950">
-                            {messages.map((msg, i) => {
-                                if (msg.sender === 'system') return <div key={i} className="text-center text-xs text-gray-500 my-4 italic">{msg.text}</div>;
+                            {/* BOTTOM: GUESTS */}
+                            <div className="flex-1 flex items-end justify-between pb-24 gap-4">
                                 
-                                const isHost = msg.sender === 'host';
-                                return (
-                                    <div key={msg.id} className={`flex flex-col ${isHost ? 'items-end' : 'items-start'} animate-fade-in`}>
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className="text-[10px] font-bold text-gray-400 uppercase">{msg.name}</span>
+                                {/* GUEST A (LEFT) */}
+                                <div className="flex flex-col items-start w-1/2 relative">
+                                    <div className={`flex items-center gap-3 transition-all duration-300 z-20 ${currentSpeaker === 'guestA' || thinkingGuest === 'guestA' ? 'scale-105' : 'scale-100 opacity-90'}`}>
+                                        <div className={`w-24 h-24 md:w-32 md:h-32 rounded-full border-4 ${guests.guestA.border} ${guests.guestA.color} flex items-center justify-center text-5xl shadow-2xl`}>
+                                            {guests.guestA.avatar}
                                         </div>
-                                        <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
-                                            isHost ? 'bg-purple-900/50 text-purple-100 rounded-tr-sm border border-purple-500/30' : 
-                                            'bg-gray-800 text-gray-200 rounded-tl-sm border border-gray-700'
-                                        }`}>
-                                            {msg.text}
+                                        <div className="bg-black/60 backdrop-blur px-3 py-1 rounded border-l-4 border-white">
+                                            <div className="text-white font-black uppercase text-sm">{guests.guestA.name}</div>
+                                            <div className="text-gray-400 text-[10px] uppercase">{guests.guestA.role}</div>
                                         </div>
                                     </div>
-                                )
-                            })}
-                            {isProcessing && (
-                                <div className="flex items-center gap-2 text-gray-500 text-xs ml-2">
-                                    <i className="ph ph-spinner animate-spin"></i>
-                                    <span>Guests are thinking...</span>
+                                    
+                                    {/* Message or Thinking Bubble */}
+                                    <div className="relative -mt-4 ml-8 z-10">
+                                        {thinkingGuest === 'guestA' && (
+                                            <div className="bg-gray-800 border border-gray-600 p-3 rounded-2xl rounded-tl-none text-white shadow-lg bubble-pop flex gap-1 items-center">
+                                                <div className="w-2 h-2 bg-gray-400 rounded-full dot-1"></div>
+                                                <div className="w-2 h-2 bg-gray-400 rounded-full dot-2"></div>
+                                                <div className="w-2 h-2 bg-gray-400 rounded-full dot-3"></div>
+                                            </div>
+                                        )}
+                                        
+                                        {guestAMsg && thinkingGuest !== 'guestA' && (
+                                            <div className={`p-4 rounded-2xl rounded-tl-none max-w-[90%] text-sm shadow-lg bubble-pop border ${guests.guestA.color.replace('bg-','border-').replace('800','500')} bg-gray-800 text-white`}>
+                                                <Typewriter text={guestAMsg.text} speed={30} />
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                            )}
-                            <div ref={messagesEndRef} />
+
+                                {/* GUEST B (RIGHT) */}
+                                <div className="flex flex-col items-end w-1/2 relative">
+                                    <div className={`flex flex-row-reverse items-center gap-3 transition-all duration-300 z-20 ${currentSpeaker === 'guestB' || thinkingGuest === 'guestB' ? 'scale-105' : 'scale-100 opacity-90'}`}>
+                                        <div className={`w-24 h-24 md:w-32 md:h-32 rounded-full border-4 ${guests.guestB.border} ${guests.guestB.color} flex items-center justify-center text-5xl shadow-2xl`}>
+                                            {guests.guestB.avatar}
+                                        </div>
+                                        <div className="bg-black/60 backdrop-blur px-3 py-1 rounded border-r-4 border-white text-right">
+                                            <div className="text-white font-black uppercase text-sm">{guests.guestB.name}</div>
+                                            <div className="text-gray-400 text-[10px] uppercase">{guests.guestB.role}</div>
+                                        </div>
+                                    </div>
+
+                                    {/* Message or Thinking Bubble */}
+                                    <div className="relative -mt-4 mr-8 z-10 flex flex-col items-end">
+                                        {thinkingGuest === 'guestB' && (
+                                            <div className="bg-gray-800 border border-gray-600 p-3 rounded-2xl rounded-tr-none text-white shadow-lg bubble-pop flex gap-1 items-center">
+                                                <div className="w-2 h-2 bg-gray-400 rounded-full dot-1"></div>
+                                                <div className="w-2 h-2 bg-gray-400 rounded-full dot-2"></div>
+                                                <div className="w-2 h-2 bg-gray-400 rounded-full dot-3"></div>
+                                            </div>
+                                        )}
+
+                                        {guestBMsg && thinkingGuest !== 'guestB' && (
+                                            <div className={`p-4 rounded-2xl rounded-tr-none max-w-[90%] text-sm shadow-lg bubble-pop border ${guests.guestB.color.replace('bg-','border-').replace('800','500')} bg-gray-800 text-white text-right`}>
+                                                <Typewriter text={guestBMsg.text} speed={30} />
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                            </div>
                         </div>
 
-                        {/* CONTROLS */}
-                        <div className="p-4 bg-gray-900 border-t border-gray-800 shrink-0">
-                            <form 
-                                onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }}
-                                className="flex gap-3 items-center max-w-2xl mx-auto"
-                            >
-                                <div className="w-10 h-10 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center shrink-0">
-                                    <span className="text-xl">🎙️</span>
-                                </div>
-                                <div className="flex-1 relative">
-                                    <input 
-                                        type="text" 
-                                        value={inputText}
-                                        onChange={e => setInputText(e.target.value)}
-                                        placeholder="Push to ask a question..."
-                                        disabled={isProcessing}
-                                        className="w-full bg-gray-950 text-white border border-gray-700 rounded-full h-12 pl-4 pr-12 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 disabled:opacity-50"
-                                    />
-                                    <button 
-                                        type="submit"
-                                        disabled={!inputText.trim() || isProcessing}
-                                        className="absolute right-1 top-1 w-10 h-10 bg-purple-600 hover:bg-purple-500 rounded-full flex items-center justify-center transition-all disabled:opacity-0 disabled:scale-75"
-                                    >
-                                        <i className="ph ph-paper-plane-right text-lg text-white"></i>
-                                    </button>
-                                </div>
+                        {/* INPUT CONTROLS */}
+                        <div className="absolute bottom-0 left-0 w-full p-4 bg-black/80 backdrop-blur border-t border-white/10 z-30">
+                            <form onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }} className="flex gap-3 items-center max-w-2xl mx-auto">
+                                <input type="text" value={inputText} onChange={e => setInputText(e.target.value)} placeholder="Ask the guests..." disabled={isProcessing}
+                                    className="flex-1 bg-gray-900 text-white border border-gray-700 rounded-full h-12 pl-6 pr-12 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 disabled:opacity-50" />
+                                <button type="submit" disabled={!inputText.trim() || isProcessing} className="w-12 h-12 bg-purple-600 hover:bg-purple-500 rounded-full flex items-center justify-center transition-all disabled:grayscale">
+                                    <i className="ph ph-paper-plane-right text-lg text-white"></i>
+                                </button>
                             </form>
                         </div>
                     </div>
                 );
             }
 
-            // 3. WRAP UP (Summary)
-            if (appState === 'summary') {
-                return (
-                    <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-6 text-center">
-                        <div className="w-20 h-20 bg-gradient-to-tr from-purple-500 to-pink-500 rounded-3xl flex items-center justify-center mb-6 shadow-2xl shadow-purple-500/20 rotate-3">
-                            <span className="text-4xl">📼</span>
-                        </div>
-                        <h1 className="text-3xl font-black text-white mb-2">That's a Wrap!</h1>
-                        <p className="text-gray-400 mb-8 max-w-md">The episode featuring {guests.guestA?.name} and {guests.guestB?.name} has been recorded.</p>
-                        
-                        <div className="bg-gray-800 rounded-2xl p-6 w-full max-w-md border border-gray-700 mb-8 text-left">
-                            <div className="flex justify-between items-start mb-4">
-                                <div>
-                                    <div className="text-xs text-purple-400 font-bold uppercase tracking-wider mb-1">Episode Summary</div>
-                                    <div className="font-bold text-lg text-white">"{topic}"</div>
-                                </div>
-                                <div className="bg-black/30 px-2 py-1 rounded text-xs text-gray-400">{tone}</div>
-                            </div>
-                            <div className="h-1 w-full bg-gray-700 rounded-full mb-4 overflow-hidden">
-                                <div className="h-full bg-purple-500 w-2/3"></div>
-                            </div>
-                            <div className="space-y-3">
-                                <div className="flex items-center gap-3 text-sm text-gray-300">
-                                    <span className="text-xl">{guests.guestA?.avatar}</span>
-                                    <span>Argued passionately for the cause.</span>
-                                </div>
-                                <div className="flex items-center gap-3 text-sm text-gray-300">
-                                    <span className="text-xl">{guests.guestB?.avatar}</span>
-                                    <span>Disagreed with everything.</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="flex gap-4 w-full max-w-md">
-                            <button onClick={() => setAppState('greenRoom')} className="flex-1 py-3 rounded-xl border border-gray-600 hover:bg-gray-800 text-white font-bold transition-all">
-                                New Episode
-                            </button>
-                            <button onClick={() => alert("Shared to Pi Feed!")} className="flex-1 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold shadow-lg shadow-purple-500/25 transition-all">
-                                Share Clip
-                            </button>
-                        </div>
-                    </div>
-                );
-            }
-
-            return null; // Should not reach here if state is correct
+            return null; 
         }
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
