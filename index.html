@@ -20,6 +20,9 @@
 
     <!-- 5. Load Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <!-- 6. Load Tone.js for sound effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
 
     <style>
         @keyframes pulse-glow {
@@ -32,6 +35,10 @@
             100% { transform: scale(1); opacity: 1; }
         }
         @keyframes bounce-dots {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        @keyframes bounce-slow {
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-5px); }
         }
@@ -49,6 +56,9 @@
             background-size: 100% 4px;
             pointer-events: none;
         }
+        .animate-bounce-slow {
+            animation: bounce-slow 4s infinite;
+        }
     </style>
 </head>
 <body class="bg-gray-950 text-white font-sans antialiased selection:bg-purple-500 selection:text-white overflow-hidden">
@@ -58,8 +68,71 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
+        // --- TONE.JS APPLAUSE SYNTH ---
+        let noiseSynth = null;
+        let panner = null;
+        let reverb = null;
+        let limiter = null;
+        let metalSynth = null;
+        
+        const initAudio = () => {
+            if (Tone.context.state !== 'running') {
+                Tone.start();
+            }
+            
+            limiter = new Tone.Limiter(-6).toDestination();
+            reverb = new Tone.Reverb(2).connect(limiter);
+            panner = new Tone.Panner(0).connect(reverb);
+            
+            // 1. Crowd Noise (White Noise)
+            noiseSynth = new Tone.NoiseSynth({
+                noise: { type: "white" },
+                envelope: {
+                    attack: 0.05,
+                    decay: 0.3,
+                    sustain: 0.1,
+                    release: 1.5,
+                }
+            }).connect(panner);
+
+            // 2. Clapping Texture (Metal Synth)
+            metalSynth = new Tone.MetalSynth({
+                frequency: 200,
+                envelope: {
+                    attack: 0.001,
+                    decay: 0.05,
+                    release: 0.1
+                },
+                harmonicity: 3.1,
+                modulationIndex: 10,
+                octaves: 0.5
+            }).connect(panner);
+        };
+        
+        const playApplause = () => {
+            initAudio(); // Ensure context is running and synths are initialized
+            
+            const now = Tone.now();
+            
+            // 1. Play the noise burst
+            noiseSynth.triggerAttackRelease(2, now);
+            
+            // 2. Schedule rapid, scattered claps using the metal synth
+            for(let i = 0; i < 40; i++) {
+                const time = now + (i * 0.03) + (Math.random() * 0.1);
+                const volume = -10 - (Math.random() * 5); // Random volume for dynamics
+                const pan = (Math.random() * 2) - 1; // Pan across stereo field
+                
+                metalSynth.volume.value = volume;
+                panner.pan.value = pan;
+                
+                metalSynth.triggerAttackRelease("16n", time);
+            }
+        };
+        // --- END TONE.JS APPLAUSE SYNTH ---
+
+
         // --- TYPEWRITER COMPONENT ---
-        // Renders text character by character
         const Typewriter = ({ text, speed = 30 }) => {
             const [displayed, setDisplayed] = useState('');
             
@@ -113,6 +186,7 @@
             const [audioEnabled, setAudioEnabled] = useState(true);
             const [currentSpeaker, setCurrentSpeaker] = useState(null); 
             const [thinkingGuest, setThinkingGuest] = useState(null); // 'guestA' or 'guestB'
+            const [summaryText, setSummaryText] = useState(''); 
 
             const [availableVoices, setAvailableVoices] = useState([]);
             const synth = window.speechSynthesis;
@@ -162,6 +236,32 @@
                 utterance.onend = () => setCurrentSpeaker(null);
                 synth.speak(utterance);
             };
+            
+            // --- SUMMARY GENERATION ---
+            const generateSummary = (messages, guests, topic, tone) => {
+                // Simplified mock summary generation based on the conversation
+                const guestAName = guests.guestA.name;
+                const guestBName = guests.guestB.name;
+                
+                const hostMessages = messages.filter(m => m.sender === 'host').length;
+                const guestAMessages = messages.filter(m => m.sender === 'guestA').length;
+                const guestBMessages = messages.filter(m => m.sender === 'guestB').length;
+                
+                let summary = `The ${tone} debate on "${topic}" has concluded after ${messages.length} total messages. `;
+                
+                summary += `${guestAName} (${guestAMessages} statements) and ${guestBName} (${guestBMessages} statements) presented strong, contrasting arguments. `;
+                
+                if (guestAMessages > guestBMessages + 1) { // +1 for a noticeable difference
+                    summary += `${guestAName} dominated the floor with a focus on their unique ${guests.guestA.role} perspective. A true clash of minds!`;
+                } else if (guestBMessages > guestAMessages + 1) {
+                    summary += `${guestBName} skillfully navigated the conversation, showcasing the strength of their ${guests.guestB.role} viewpoint. A true clash of minds!`;
+                } else {
+                    summary += `Both guests held their own, resulting in an evenly matched and highly stimulating discussion.`;
+                }
+                
+                return summary;
+            };
+
 
             // --- HANDLERS ---
             const handleStartShow = () => {
@@ -171,6 +271,19 @@
                     text: `🎙️ Show Starting... Topic: ${topic}`
                 }]);
                 setAppState('studio');
+            };
+            
+            const handleEndShow = () => {
+                // 1. Generate Summary
+                const summary = generateSummary(messages, guests, topic, tone);
+                setSummaryText(summary);
+                
+                // 2. Change state and stop speech
+                setAppState('summary');
+                if (synth) synth.cancel();
+                
+                // 3. Play applause sound
+                playApplause();
             };
 
             const handleSendMessage = () => {
@@ -234,6 +347,25 @@
             const getLastMessage = (sender) => {
                 return messages.filter(m => m.sender === sender).pop();
             };
+            
+            const handleShare = () => {
+                const shareText = `Just hosted an AI Talk Show debate on "${topic}" with ${guests.guestA.name} and ${guests.guestB.name}! \n\nSummary: ${summaryText}`;
+                const shareUrl = window.location.href; 
+                
+                // Try to use the Web Share API first
+                if (navigator.share) {
+                    navigator.share({
+                        title: 'AI Talk Show Summary',
+                        text: shareText,
+                        url: shareUrl,
+                    }).catch((error) => console.log('Error sharing:', error));
+                } else {
+                    // Fallback for desktop/non-supported browsers (e.g., Twitter/X Web Intent)
+                    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
+                    window.open(twitterUrl, '_blank');
+                }
+            };
+
 
             // --- VIEWS ---
 
@@ -258,12 +390,14 @@
                                 <div className="grid grid-cols-2 gap-4 mb-4">
                                     {['guestA', 'guestB'].map((slot, idx) => (
                                         <div key={slot} className={`p-4 rounded-xl border-2 transition-all ${guests[slot] ? `${guests[slot].color} border-transparent` : 'bg-gray-800 border-dashed border-gray-700'}`}>
-                                            <div className="text-xs text-white/50 mb-2 uppercase">Guest #{idx + 1}</div>
+                                            <div className="flex justify-between items-center mb-2">
+                                                <div className="text-xs text-white/50 uppercase">Guest #{idx + 1}</div>
+                                                {guests[slot] && <button onClick={() => setGuests(prev => ({...prev, [slot]: null}))} className="text-xs text-slate-400 hover:text-white">Change</button>}
+                                            </div>
                                             {guests[slot] ? (
                                                 <div className="flex flex-col items-center text-center">
                                                     <div className="text-4xl mb-2">{guests[slot].avatar}</div>
                                                     <div className="font-bold">{guests[slot].name}</div>
-                                                    <button onClick={() => setGuests(prev => ({...prev, [slot]: null}))} className="mt-3 text-xs bg-black/20 hover:bg-black/40 px-3 py-1 rounded-full">Remove</button>
                                                 </div>
                                             ) : ( <div className="text-center text-gray-500 text-sm py-4">Select Below</div> )}
                                         </div>
@@ -319,7 +453,13 @@
                             <div className="flex items-center gap-2 bg-red-600 text-white px-3 py-1 rounded font-bold text-xs uppercase tracking-widest animate-pulse">
                                 Live
                             </div>
-                            <button onClick={() => setAppState('greenRoom')} className="text-gray-500 hover:text-white bg-black/50 rounded-full p-2"><i className="ph ph-power text-xl"></i></button>
+                            <div className="flex gap-2">
+                                {/* New End Show Button */}
+                                <button onClick={handleEndShow} disabled={isProcessing} className="text-white hover:text-red-400 bg-red-600/50 rounded-full px-4 py-1 text-xs font-bold transition-all disabled:opacity-50 flex items-center gap-1">
+                                    <i className="ph ph-stop text-sm"></i> END SHOW
+                                </button>
+                                <button onClick={() => setAppState('greenRoom')} className="text-gray-500 hover:text-white bg-black/50 rounded-full p-2"><i className="ph ph-power text-xl"></i></button>
+                            </div>
                         </div>
 
                         {/* MAIN TV AREA */}
@@ -418,6 +558,51 @@
                                     <i className="ph ph-paper-plane-right text-lg text-white"></i>
                                 </button>
                             </form>
+                        </div>
+                    </div>
+                );
+            }
+            
+            // 3. SUMMARY SCREEN
+            if (appState === 'summary') {
+                return (
+                    <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center p-6 text-center overflow-y-auto">
+                        <div className="max-w-xl w-full bg-gray-800 p-8 rounded-3xl border border-purple-700 shadow-2xl shadow-purple-900/50 animate-pop-in">
+                            
+                            <i className="ph ph-trophy text-6xl text-yellow-400 mb-4 inline-block animate-bounce-slow"></i>
+                            <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-red-400 mb-2">
+                                BROADCAST COMPLETE
+                            </h1>
+                            <p className="text-sm text-gray-400 mb-8">The audience is applauding.</p>
+
+                            <div className="flex justify-around items-center mb-6">
+                                <div className="text-center">
+                                    <div className="text-4xl">{guests.guestA.avatar}</div>
+                                    <p className="text-sm font-bold text-gray-200">{guests.guestA.name}</p>
+                                </div>
+                                <i className="ph ph-versus text-2xl text-gray-500"></i>
+                                <div className="text-center">
+                                    <div className="text-4xl">{guests.guestB.avatar}</div>
+                                    <p className="text-sm font-bold text-gray-200">{guests.guestB.name}</p>
+                                </div>
+                            </div>
+
+                            <div className="bg-gray-900 p-6 rounded-xl border border-gray-700 text-left mb-8">
+                                <h2 className="text-lg font-bold text-purple-400 mb-2 border-b border-purple-900 pb-2">Debate Summary:</h2>
+                                <p className="text-gray-200 leading-relaxed italic">{summaryText}</p>
+                            </div>
+
+                            <div className="flex flex-col md:flex-row justify-center space-y-3 md:space-y-0 md:space-x-4">
+                                {/* Share Button */}
+                                <button onClick={handleShare} className="py-3 px-6 bg-blue-500 hover:bg-blue-600 rounded-full font-bold transition-all flex items-center justify-center gap-2 shadow-lg">
+                                    <i className="ph ph-share-network text-lg"></i> Share Summary
+                                </button>
+                                
+                                {/* New Show Button */}
+                                <button onClick={() => setAppState('greenRoom')} className="py-3 px-6 bg-purple-600 hover:bg-purple-700 rounded-full font-bold transition-all flex items-center justify-center gap-2 shadow-lg">
+                                    <i className="ph ph-video-camera text-lg"></i> New Show
+                                </button>
+                            </div>
                         </div>
                     </div>
                 );
