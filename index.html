@@ -58,8 +58,9 @@
 
         function App() {
             // --- STATE ---
-            const [appState, setAppState] = useState('login'); // 'login', 'greenRoom', 'studio', 'summary'
-            const [user, setUser] = useState(null);
+            // START DIRECTLY IN GREENROOM
+            const [appState, setAppState] = useState('greenRoom'); 
+            const [user, setUser] = useState({ username: 'Host', uid: 'guest' });
             
             // Show Config
             const [topic, setTopic] = useState('');
@@ -124,21 +125,6 @@
             };
 
             // --- HANDLERS ---
-            const handleLogin = async () => {
-                // Mock Login for Web, Real for Pi
-                if (window.Pi) {
-                    try {
-                        const scopes = ['username', 'payments'];
-                        const auth = await window.Pi.authenticate(scopes, () => {});
-                        setUser({ username: auth.user.username, uid: auth.user.uid });
-                    } catch (e) {
-                        setUser({ username: 'Guest_Host', uid: 'test' });
-                    }
-                } else {
-                    setUser({ username: 'Guest_Host', uid: 'test' });
-                }
-                setAppState('greenRoom');
-            };
 
             const handleStartShow = () => {
                 setMessages([{
@@ -455,25 +441,7 @@
                 );
             }
 
-            // 0. LOGIN
-            return (
-                <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gray-950 relative overflow-hidden">
-                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-purple-900/20 via-gray-950 to-black pointer-events-none"></div>
-                    <div className="relative z-10 text-center">
-                        <div className="inline-block p-4 rounded-full bg-gray-900 border border-gray-800 mb-6 shadow-2xl">
-                            <span className="text-5xl">🎙️</span>
-                        </div>
-                        <h1 className="text-5xl font-black mb-4 tracking-tight text-white">AI TALK SHOW</h1>
-                        <p className="text-xl text-gray-400 mb-10 max-w-xs mx-auto">Host the ultimate debate between history's greatest minds.</p>
-                        <button 
-                            onClick={handleLogin}
-                            className="bg-[#F3A912] hover:bg-[#d4920e] text-black font-bold text-lg py-4 px-10 rounded-xl shadow-xl shadow-orange-500/20 transition-all transform hover:scale-105"
-                        >
-                            Login with Pi
-                        </button>
-                    </div>
-                </div>
-            );
+            return null; // Should not reach here if state is correct
         }
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
