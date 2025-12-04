@@ -1,45 +1,32 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>AI Talk Show Test</title>
-</head>
-<body>
+const handleSendMessage = async () => {
+  if (!topic || !guests.guestA || !guests.guestB) return;
 
-<h1>AI Talk Show Test</h1>
+  const payload = {
+    question: topic,
+    guestA: guests.guestA.name,
+    guestB: guests.guestB.name,
+    style: 'argument',
+    tone: 'Funny',
+    maxWords: 40
+  };
 
-<label>Question: <input id="question" type="text" value="AI is good or bad for humanity"></label><br>
-<label>Guest A: <input id="guestA" type="text" value="Donald Trump"></label><br>
-<label>Guest B: <input id="guestB" type="text" value="Elon Musk"></label><br>
-<label>Tone: <input id="tone" type="text" value="Funny"></label><br>
-<label>Style: <input id="style" type="text" value="argument"></label><br><br>
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
 
-<button id="sendBtn">Send to API</button>
+    const data = await res.json();
+    console.log('AI Response:', data.output[0].text);
 
-<h2>Response:</h2>
-<pre id="response"></pre>
+    // Add AI response to messages
+    setMessages(prev => [
+      ...prev,
+      { sender: 'guestA', text: data.output[0].text }
+    ]);
 
-<script>
-document.getElementById('sendBtn').addEventListener('click', async () => {
-    const question = document.getElementById('question').value;
-    const guest_a = document.getElementById('guestA').value;
-    const guest_b = document.getElementById('guestB').value;
-    const tone = document.getElementById('tone').value;
-    const style = document.getElementById('style').value;
-
-    try {
-        const res = await fetch('/api/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ question, guest_a, guest_b, tone, style })
-        });
-        const data = await res.json();
-        document.getElementById('response').textContent = JSON.stringify(data, null, 2);
-    } catch (err) {
-        document.getElementById('response').textContent = 'Error: ' + err;
-    }
-});
-</script>
-
-</body>
-</html>
+  } catch (err) {
+    console.error(err);
+  }
+};
