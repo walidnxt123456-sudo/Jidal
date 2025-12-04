@@ -614,5 +614,90 @@
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
+
+// Adding api resp
+    <script>
+// DOM elements
+const askBtn = document.getElementById("askBtn");
+const questionInput = document.getElementById("question");
+const guestAInput = document.getElementById("guestA");
+const guestBInput = document.getElementById("guestB");
+const toneInput   = document.getElementById("tone");
+const topicInput  = document.getElementById("topic");
+const answerBox   = document.getElementById("answer");
+
+// When user clicks Ask:
+askBtn.addEventListener("click", async () => {
+    const message = questionInput.value.trim();
+    if (!message) {
+        answerBox.textContent = "Please type a question.";
+        return;
+    }
+
+    const payload = {
+        topic: topicInput.value,
+        guestA: guestAInput.value,
+        guestB: guestBInput.value,
+        tone: toneInput.value,
+        message: message
+    };
+
+    answerBox.textContent = "Thinking...";
+
+    try {
+        const res = await fetch("/api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (data.error) {
+            answerBox.textContent = "Error: " + data.error;
+            return;
+        }
+
+        // Expected JSON { reply: {A: "...", B: "..."} }
+        answerBox.textContent = 
+            "Guest A: " + data.reply.A + "\n\n" +
+            "Guest B: " + data.reply.B;
+
+    } catch (err) {
+        answerBox.textContent = "Request failed: " + err.message;
+    }
+});
+</script>
+
+//---
+    <label>Topic:</label>
+<input id="topic" value="AI is good or bad for humanity"><br><br>
+
+<label>Guest A:</label>
+<input id="guestA" value="Donald Trump"><br><br>
+
+<label>Guest B:</label>
+<input id="guestB" value="Elon Musk"><br><br>
+
+<label>Tone:</label>
+<select id="tone">
+  <option>Funny</option>
+  <option>Aggressive</option>
+  <option>Academic</option>
+  <option>Sarcastic</option>
+</select><br><br>
+
+<label>Your Question:</label>
+<input id="question" placeholder="Ask something…"><br><br>
+
+<button id="askBtn">Ask</button>
+
+<h3>AI Reply:</h3>
+<pre id="answer"></pre>
+
+    
+
+
+    
 </body>
 </html>
