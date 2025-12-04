@@ -13,7 +13,7 @@ export default async function handler(req, res) {
   }
 
   const prompt = `
-Task:Create a fictional parody dialogue in the style of a ${style}.
+Task: Create a fictional parody dialogue in the style of a ${style}.
 
 Question: ${question}
 
@@ -41,15 +41,14 @@ ${guestB}:
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        agent: "express",
+        agent: 'express',
         input: prompt,
         stream: false
       })
     });
 
-    const data = await response.json();  // safe because API returns JSON
-
-    return res.status(200).json(data);  // forward entire AI response
+    const data = await response.json();
+    return res.status(200).json(data);
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: 'AI API error', details: err.message });
