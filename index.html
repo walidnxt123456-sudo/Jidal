@@ -1,14 +1,60 @@
-const handleSendMessage = async () => {
-  if (!topic || !guests.guestA || !guests.guestB) return;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Talk Show</title>
+</head>
+<body>
+<h1>AI Talk Show Test</h1>
 
-  const payload = {
-    question: topic,
-    guestA: guests.guestA.name,
-    guestB: guests.guestB.name,
-    style: 'argument',
-    tone: 'Funny',
-    maxWords: 40
-  };
+<label>Question:</label>
+<input type="text" id="question" placeholder="Type your question" style="width: 300px;">
+<br><br>
+
+<label>Guest A:</label>
+<input type="text" id="guestA" value="Donald Trump">
+<br><br>
+
+<label>Guest B:</label>
+<input type="text" id="guestB" value="Elon Musk">
+<br><br>
+
+<label>Style:</label>
+<select id="style">
+  <option value="argument">Argument</option>
+  <option value="debate">Debate</option>
+  <option value="roast">Roast</option>
+</select>
+<br><br>
+
+<label>Tone:</label>
+<select id="tone">
+  <option value="Funny">Funny</option>
+  <option value="Aggressive">Aggressive</option>
+  <option value="Academic">Academic</option>
+</select>
+<br><br>
+
+<button onclick="sendQuestion()">Ask AI</button>
+
+<h2>AI Response:</h2>
+<pre id="response"></pre>
+
+<script>
+async function sendQuestion() {
+  const question = document.getElementById('question').value;
+  const guestA = document.getElementById('guestA').value;
+  const guestB = document.getElementById('guestB').value;
+  const style = document.getElementById('style').value;
+  const tone = document.getElementById('tone').value;
+
+  if (!question) {
+    alert('Please enter a question!');
+    return;
+  }
+
+  const payload = { question, guestA, guestB, style, tone, maxWords: 40 };
 
   try {
     const res = await fetch('/api/chat', {
@@ -18,15 +64,12 @@ const handleSendMessage = async () => {
     });
 
     const data = await res.json();
-    console.log('AI Response:', data.output[0].text);
-
-    // Add AI response to messages
-    setMessages(prev => [
-      ...prev,
-      { sender: 'guestA', text: data.output[0].text }
-    ]);
-
+    document.getElementById('response').textContent = data.output[0].text;
   } catch (err) {
     console.error(err);
+    document.getElementById('response').textContent = 'Error calling API: ' + err.message;
   }
-};
+}
+</script>
+</body>
+</html>
