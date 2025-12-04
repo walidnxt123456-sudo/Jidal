@@ -3,10 +3,10 @@ export const config = {
 };
 
 export default async function handler(req, res) {
-  console.log("API HIT");
+  console.log("API HIT", req.method);
 
   try {
-    // If it's GET request → respond with info (prevents body undefined crash)
+    // GET test
     if (req.method === "GET") {
       return res.status(200).json({
         ok: true,
@@ -14,31 +14,34 @@ export default async function handler(req, res) {
       });
     }
 
-    // Parse JSON body safely
-    const body = req.body || {};
-    console.log("RAW BODY:", body);
-
-    const { question, guestA, guestB, tone, style, maxWords, rounds } = body;
-
-    if (!question) {
-      return res.status(400).json({
-        error: "Missing question in POST body.",
-        received_body: body
+    // Reject other methods
+    if (req.method !== "POST") {
+      return res.status(405).json({
+        error: "Method Not Allowed. Use POST.",
+        method: req.method
       });
     }
 
-    // TEMPORARY TEST RESPONSE
+    const body = req.body || {};
+    console.log("BODY:", body);
+
+    const { question } = body;
+
+    if (!question) {
+      return res.status(400).json({
+        error: "Missing 'question' in JSON body.",
+        bodyReceived: body
+      });
+    }
+
     return res.status(200).json({
       ok: true,
       message: "Backend POST working!",
-      echo: { question, guestA, guestB, tone, style }
+      echo: body
     });
 
   } catch (err) {
-    console.error("SERVER ERROR:", err);
-    return res.status(500).json({
-      error: "Server crashed",
-      details: err.toString()
-    });
+    console.error(err);
+    return res.status(500).json({ error: err.toString() });
   }
 }
