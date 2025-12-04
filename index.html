@@ -1,75 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI Talk Show</title>
+  <meta charset="UTF-8">
+  <title>AI Chat Test</title>
 </head>
 <body>
-<h1>AI Talk Show Test</h1>
+  <h1>AI Chat Test</h1>
 
-<label>Question:</label>
-<input type="text" id="question" placeholder="Type your question" style="width: 300px;">
-<br><br>
+  <input id="question" type="text" placeholder="Enter your question" style="width:300px;">
+  <button onclick="sendQuestion()">Send</button>
 
-<label>Guest A:</label>
-<input type="text" id="guestA" value="Donald Trump">
-<br><br>
+  <pre id="response" style="background:#eee; padding:10px; margin-top:20px;"></pre>
 
-<label>Guest B:</label>
-<input type="text" id="guestB" value="Elon Musk">
-<br><br>
+  <script>
+    async function sendQuestion() {
+      const question = document.getElementById('question').value;
+      if (!question) return alert('Enter a question');
 
-<label>Style:</label>
-<select id="style">
-  <option value="argument">Argument</option>
-  <option value="debate">Debate</option>
-  <option value="roast">Roast</option>
-</select>
-<br><br>
+      const payload = {
+        question,
+        guestA: "Donald Trump",
+        guestB: "Elon Musk",
+        style: "argument",
+        tone: "Funny",
+        maxWords: 40
+      };
 
-<label>Tone:</label>
-<select id="tone">
-  <option value="Funny">Funny</option>
-  <option value="Aggressive">Aggressive</option>
-  <option value="Academic">Academic</option>
-</select>
-<br><br>
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
 
-<button onclick="sendQuestion()">Ask AI</button>
+        // For testing, just show raw text from API
+        const text = await res.text();
+        document.getElementById('response').textContent = text;
 
-<h2>AI Response:</h2>
-<pre id="response"></pre>
-
-<script>
-async function sendQuestion() {
-  const question = document.getElementById('question').value;
-  const guestA = document.getElementById('guestA').value;
-  const guestB = document.getElementById('guestB').value;
-  const style = document.getElementById('style').value;
-  const tone = document.getElementById('tone').value;
-
-  if (!question) {
-    alert('Please enter a question!');
-    return;
-  }
-
-  const payload = { question, guestA, guestB, style, tone, maxWords: 40 };
-
-  try {
-    const res = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-
-    const data = await res.json();
-    document.getElementById('response').textContent = data.output[0].text;
-  } catch (err) {
-    console.error(err);
-    document.getElementById('response').textContent = 'Error calling API: ' + err.message;
-  }
-}
-</script>
+      } catch (err) {
+        document.getElementById('response').textContent = 'Error: ' + err.message;
+      }
+    }
+  </script>
 </body>
 </html>
