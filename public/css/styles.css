@@ -1,0 +1,186 @@
+/* --- General Resets and Typography --- */
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f4f7f6; /* Light gray background for the "desktop" area */
+    color: #333;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+}
+
+/* --- Main Layout Container (The "Mobile Screen" Frame) --- */
+.main-container {
+    /* Critical: Set a fixed, narrow width like a mobile screen */
+    width: 100%;
+    max-width: 450px; /* Max width simulates a large phone/tablet held vertically */
+    padding: 0;
+    background-color: #fff;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    /* Position relative is needed for the absolute positioning of the form later */
+    position: relative;
+    overflow: hidden; /* Hide the form when it slides out */
+}
+
+/* --- Header & Typography --- */
+.app-header {
+    background-color: #007bff; /* Header color */
+    width: 100%;
+    padding: 20px 15px; /* Add internal padding */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    color: white; /* White text on blue header */
+}
+
+.app-header h1 {
+    color: white;
+    margin: 0 0 5px 0;
+    font-size: 1.8em;
+}
+
+.app-header p {
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0;
+    font-size: 0.9em;
+}
+
+h2 {
+    color: #007bff; /* Section headers are blue */
+    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 5px;
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 1.2em;
+}
+
+/* --- Form (Control Panel) Styling and Transition Setup --- */
+#talk-show-form {
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    border-bottom: 8px solid #f4f7f6;
+    
+    /* Transition properties for sliding */
+    transition: transform 0.8s cubic-bezier(0.165, 0.84, 0.44, 1), opacity 0.6s ease-out;
+    transform: translateY(0); /* Initial state */
+    z-index: 2; /* Keep it above the response area initially */
+    background-color: white; /* Ensure it covers the response area */
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* The class applied when the form is hidden (after start) */
+.form-slide-up {
+    transform: translateY(-100%); /* Move the form up by 100% of its height */
+    opacity: 0;
+    position: absolute; /* Take it out of the flow */
+    top: 0;
+    left: 0;
+    height: auto; /* Let it shrink naturally */
+    overflow: hidden;
+    padding: 0; /* Remove padding when hidden */
+}
+
+.control-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.input-group label {
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 4px;
+    font-size: 0.9em;
+}
+
+input[type="text"],
+select {
+    padding: 14px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    font-size: 16px;
+    width: 100%;
+    box-sizing: border-box;
+    transition: border-color 0.3s;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+
+input[type="text"]:focus,
+select:focus {
+    border-color: #007bff;
+    outline: none;
+}
+
+/* --- Button Styling (Primary - Start Discussion) --- */
+.action-button {
+    background-color: #28a745;
+    color: white;
+    padding: 15px;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+.action-button:hover {
+    background-color: #1e7e34;
+}
+
+/* --- Secondary Button Styling (Return Backstage) --- */
+.secondary-button {
+    background-color: #6c757d; /* Soft gray for a secondary action */
+    margin-top: 20px;
+    width: 100%;
+}
+
+.secondary-button:hover {
+    background-color: #5a6268;
+}
+
+/* Hide the return button by default, JS will show/hide it */
+#return-button {
+    display: none;
+}
+
+/* --- Response Area (Live Feed) Styling --- */
+.response-area {
+    padding: 15px;
+    background-color: #fff;
+    flex-grow: 1;
+    z-index: 1;
+}
+
+#response {
+    background: #f8f9fa;
+    color: #212529;
+    padding: 15px;
+    border-radius: 8px;
+    white-space: pre-wrap;
+    min-height: 200px;
+    box-sizing: border-box;
+    border: 1px solid #dee2e6;
+    margin-top: 0;
+    font-size: 0.95em;
+}
+
+/* --- Footer Styling --- */
+.app-footer {
+    width: 100%;
+    padding: 10px 0;
+    text-align: center;
+    color: #6c757d;
+    font-size: 0.7em;
+    background-color: #f4f7f6;
+}

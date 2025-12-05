@@ -23,14 +23,12 @@ export default async function handler(req, res) {
     
     //Promt creation
 const prompt = `
-Task:Create a fictional parody dialogue in the tone of a ${tone}.
-
+Task:Create a fictional parody dialogue. 
 Question:${question}
 
 Instructions:
 - The ENTIRE response must be in plain text only (no markdown, no bold, no headings).
 - Each character’s response MUST be under ${max_words} words.
-- The dialogue MUST be short.
 - Both characters should speak in exaggerated parody versions of themselves.
 - Tone for this exchange: ${tone}
 - Do NOT exceed the word limit.
@@ -38,11 +36,10 @@ Instructions:
 
 ${guest_a}:
 - Write a parody of ${guest_a} responding to the question.
-- In this ${tone}, ${guest_a} should interact with or react to ${guest_b}.
+- ${guest_a} should interact with or react to ${guest_b}.
 
 ${guest_b}:
 - Write a parody of ${guest_b} replying to both the question and ${guest_a}'s comment.
-- Maintain the ${tone} tone.
 `;
 
 const payload = {
@@ -65,7 +62,7 @@ const payload = {
     body: JSON.stringify(payload)
   });
 
-  const data = await response.json();
+  const data = await response.json().catch(()=>null);
   console.log("RAW LLM RESPONSE:", data);
 
     // Safely extract LLM output
@@ -91,6 +88,11 @@ ${answer}
 
   } catch (err) {
     console.error('Server error:', err);
-    res.status(500).json({ error: 'Server crashed', details: err.message });
+    //res.status(500).json({ error: 'Server crashed', details: err.message });
+    if (!res.headersSent) {
+      return res.status(500).json({ error: 'Server crashed', details: err.message });
+    }
+    // If headers already sent, do nothing — avoid libuv crash
+    return;
   }
 }
