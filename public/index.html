@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Meta Configuration -->
+  <meta charset="UTF-8">
+
+  <!-- SEO Metadata -->
+
+
+  <!-- App Title -->
+  <title>AI Chat Test</title>
+
+  <!-- Favicon -->
+
+  <!-- Externel CSS -->
+  <link rel="stylesheet" href="/css/styles.css" />
+
+  <!-- Security (best practice for vercel apps) -->
+
+</head>
+<body>
+
+
+  <!-- App header -->
+  <h1>** Test **</h1>
+
+  <!-- Main Vontent Container -->
+
+<div style="display:flex; flex-direction:column; width:300px; gap:10px;">
+
+  <input id="question" type="text" placeholder="Enter your question">
+
+<input list="guest_a_list" id="guest_a" type="text" value="Aristotle" style="width:300px;">
+<datalist id="guest_a_list">
+  <option value="Elon Musk">
+  <option value="Donald Trump">
+  <option value="Aristotle">
+  <option value="Nelson Mandela">
+  <option value="Julius Caesar">
+</datalist>
+
+<input list="guest_b_list" id="guest_b" type="text" value="Nelson Mandela" style="width:300px;">
+<datalist id="guest_b_list">
+  <option value="Elon Musk">
+  <option value="Donald Trump">
+  <option value="Aristotle">
+  <option value="Nelson Mandela">
+  <option value="Julius Caesar">
+</datalist>
+
+
+<select id="tone" style="width:300px;">
+  <option value="Funny">Funny</option>
+  <option value="Serious">Serious</option>
+  <option value="Aggressive">Aggressive</option>
+  <option value="Academic">Academic</option>
+  <option value="Sarcastic">Sarcastic</option>
+  <option value="Calm">Calm</option>
+</select>
+
+
+  <button onclick="sendQuestion()">Send</button>
+
+</div>
+
+  <pre id="response" style="background:#eee; padding:10px; margin-top:20px;"></pre>
+
+
+
+  <!-- Footer -->
+  <Footer class="app-footer">
+    <p>2025 - All right reserved.</p>
+  </Footer>
+
+  <!-- Application Script -->
+  <script src="/js/app.js"></script>
+</body>
+</html>
