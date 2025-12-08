@@ -1,7 +1,7 @@
 const API_KEY = process.env.YOU_API_KEY;
 const url = "https://api.you.com/v1/agents/runs";
 
-const max_words = 40;
+const max_words = 10;
 const rounds = 1;
 const tones = ["Funny", "Serious", "Aggressive", "Academic", "Sarcastic", "Calm"];
 
@@ -75,8 +75,8 @@ Guest A: ${guest_a}
 Guest B: ${guest_b}
 Tone: ${tone}
 
-PROMPT SENT:
-${prompt}
+//PROMPT SENT:
+//${prompt}
 
 LLM ANSWER:
 ${answer}
