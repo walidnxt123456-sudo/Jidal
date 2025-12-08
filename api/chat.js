@@ -53,7 +53,7 @@ const payload = {
     //res.status(200).json({ output: reply });
 
 //llm request
-  const response = await fetch(url, {
+//  const response = await fetch(url, {
     method: "POST",
       headers: {
         "Authorization": `Bearer ${API_KEY}`,
