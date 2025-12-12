@@ -1,3 +1,27 @@
+// Browser TTS for each dialogue line
+function playBrowserTTS(text, voiceLang = "en-US") {
+  if (!('speechSynthesis' in window)) {
+    alert('Your browser does not support speech synthesis.');
+    return;
+  }
+
+  // Cancel any ongoing speech
+  window.speechSynthesis.cancel();
+
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = voiceLang;
+  utter.rate = 1; // normal
+  utter.pitch = 1; // normal
+  utter.volume = 1;
+
+  // Optional: pick first English voice
+  const voices = window.speechSynthesis.getVoices();
+  const voice = voices.find(v => v.lang === "en-US");
+  if (voice) utter.voice = voice;
+
+  window.speechSynthesis.speak(utter);
+}
+
 // Helper function to show/hide the "Return Backstage" button
 function toggleReturnButton(isVisible) {
     const button = document.getElementById('return-button');
@@ -78,3 +102,35 @@ async function sendQuestion() {
         document.getElementById('response').textContent = 'Error: ' + err.message;
     }
 }
+
+
+
+/*// Quick test: browser Text-To-Speech (no backend required)
+function playBrowserTTS(text) {
+  if (!('speechSynthesis' in window)) {
+    alert('Your browser does not support speech synthesis.');
+    return;
+  }
+
+  // Stop any ongoing speech
+  window.speechSynthesis.cancel();
+
+  const utter = new SpeechSynthesisUtterance(text);
+
+  // Safe, generic settings
+  utter.lang = "en-US";
+  utter.rate = 1;
+  utter.pitch = 1;
+
+  // Optional: pick a specific generic voice
+  const voices = window.speechSynthesis.getVoices();
+  const voice = voices.find(v => v.lang === "en-US");
+  if (voice) utter.voice = voice;
+
+  window.speechSynthesis.speak(utter);
+}
+
+function testVoice() {
+  const text = "Hello! This is a test of the voice system.";
+  playBrowserTTS(text);
+}*/

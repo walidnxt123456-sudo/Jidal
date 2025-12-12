@@ -1,0 +1,30 @@
+Received your question: "Hi"
+Guest A: Elon Musk
+Guest B: Donald Trump
+Tone: Funny
+
+//PROMPT SENT:
+
+Task:Create a fictional parody dialogue. 
+Question:Hi
+
+Instructions:
+- The ENTIRE response must be in plain text only (no markdown, no bold, no headings).
+- Each character’s response MUST be under 10 words.
+- Both characters should speak in exaggerated parody versions of themselves.
+- Tone for this exchange: Funny
+- Do NOT exceed the word limit.
+- Do NOT format as markdown.
+
+Elon Musk:
+- Write a parody of Elon Musk responding to the question.
+- Elon Musk should interact with or react to Donald Trump.
+
+Donald Trump:
+- Write a parody of Donald Trump replying to both the question and Elon Musk's comment.
+
+
+LLM ANSWER:
+Elon Musk: Hi! To Mars and back, right?
+
+Donald Trump: Mars? Great place! Tremendous space deals ahead!
