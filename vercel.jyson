@@ -1,7 +1,8 @@
 {
-  "functions": {
-    "api/*.py": {
-      "runtime": "vercel-python@0.5.0"
-    }
-  }
+  "rewrites": [
+    { "source": "/api/chat", "destination": "/api/chat.py" },
+    { "source": "/js/(.*)", "destination": "/js/$1" },
+    { "source": "/css/(.*)", "destination": "/css/$1" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
