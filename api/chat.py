@@ -21,8 +21,8 @@ class handler(BaseHTTPRequestHandler):
             # THIS IS THE EXACT STRUCTURE THE ERROR IS ASKING FOR:
             payload = {
                 "agent": "express",
-                "input": prompt
-                "stream": False,
+                "input": prompt,
+                "stream": False
                 }
             }
 
