@@ -14,44 +14,42 @@ class handler(BaseHTTPRequestHandler):
         try:
             body = json.loads(post_data.decode("utf-8"))
             prompt = (
-                f"Short dialogue. Topic: {body.get('question')}. "
-                f"Guests: {body.get('guest_a')} and {body.get('guest_b')}. "
-                f"Format: Guest Name: Dialogue."
+                f"Create a short dialogue between {body.get('guest_a')} and {body.get('guest_b')} "
+                f"about {body.get('question')}. Format: Name: Dialogue."
             )
 
-            # Match exactly the You.com documentation payload
+            # THIS IS THE EXACT STRUCTURE THE ERROR IS ASKING FOR:
             payload = {
                 "agent": "express",
-                "query": prompt,
-                "stream": False
+                "stream": False,
+                "input": {
+                    "query": prompt
+                }
             }
 
-            # Use the 'Bearer' format required by the Authorization header
             headers = {
                 "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json"
             }
 
-            print(f"DEBUG: Calling You.com with agent: express")
+            print(f"DEBUG: Attempting with nested input structure...")
 
             response = requests.post(url, json=payload, headers=headers, timeout=25)
             
             if response.status_code != 200:
-                print(f"API ERROR: {response.text}")
-                output_text = "The guests are having technical difficulties. Please try again."
+                print(f"STILL ERROR: {response.text}")
+                output_text = f"API Error {response.status_code}: {response.text}"
             else:
                 ai_data = response.json()
-                # Extracting text - You.com usually returns 'answer'
-                output_text = ai_data.get("answer") or "The debate has ended prematurely."
+                # You.com usually returns text in 'answer'
+                output_text = ai_data.get("answer") or "The conversation was too quiet to hear."
 
-            # Send back to app.js
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
             self.end_headers()
             self.wfile.write(json.dumps({"output": output_text}).encode('utf-8'))
 
         except Exception as e:
-            print(f"LOCAL ERROR: {str(e)}")
             self.send_response(500)
             self.end_headers()
-            self.wfile.write(json.dumps({"output": "Server Error"}).encode('utf-8'))
+            self.wfile.write(json.dumps({"output": f"Local Crash: {str(e)}"}).encode('utf-8'))
