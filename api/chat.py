@@ -23,10 +23,21 @@ class handler(BaseHTTPRequestHandler):
             
             # Prepare the specific prompt for the talk show
             prompt = (
-                f"Create a short, funny dialogue between {body.get('guest_a')} and {body.get('guest_b')} "
-                f"about '{body.get('question')}'. Use the tone: {body.get('tone')}. "
+                f"Task:Create a fictional parody dialogue."
+                f"Question:{body.get('question')}"
+                f"Instructions:"
+                f"-The ENTIRE response must be in plain text only (no markdown, no bold, no headings)."
+                f"- Each character’s response MUST be under 10 words."
+                f"- Both characters should speak in exaggerated parody versions of themselves."
+                f"- Tone for this exchange: {body.get('tone')}"
+                f"- Do NOT exceed 20 words by character"
+                f"{body.get('guest_a')}:"
+                f"- Write a parody of {body.get('guest_a')} responding to the question."
+                f"- {body.get('guest_a')} should interact with or react to Donald Trump."
+                f"{body.get('guest_b')}:"
+                f"- Write a parody of {body.get('guest_b')} replying to both the question and {body.get('guest_a')}'s comment."
                 f"Format it as Name: [speech]."
-                f"Maximum 2 round by Name"
+                f"Maximum 4 round by Name"
                 f"Maximum 10 words by round"
             )
 
