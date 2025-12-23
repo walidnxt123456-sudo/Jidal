@@ -16,6 +16,7 @@ class handler(BaseHTTPRequestHandler):
             prompt = (
                 f"Create a short dialogue between {body.get('guest_a')} and {body.get('guest_b')} "
                 f"about {body.get('question')}. Format: Name: Dialogue."
+                f"Maximum 40 words in total"
             )
 
             # THIS IS THE EXACT STRUCTURE THE ERROR IS ASKING FOR:
