@@ -24,7 +24,7 @@ class handler(BaseHTTPRequestHandler):
                 "input": prompt,
                 "stream": False
                 }
-            }
+            
 
             headers = {
                 "Authorization": f"Bearer {api_key}",
