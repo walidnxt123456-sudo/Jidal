@@ -26,6 +26,8 @@ class handler(BaseHTTPRequestHandler):
                 f"Create a short, funny dialogue between {body.get('guest_a')} and {body.get('guest_b')} "
                 f"about '{body.get('question')}'. Use the tone: {body.get('tone')}. "
                 f"Format it as Name: [speech]."
+                f"Maximum 2 round by Name"
+                f"Maximum 10 words by round"
             )
 
             # 3. Construct the payload EXACTLY as the API requires
