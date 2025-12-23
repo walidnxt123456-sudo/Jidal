@@ -33,7 +33,7 @@ class handler(BaseHTTPRequestHandler):
                 f"- Do NOT exceed 20 words by character"
                 f"{body.get('guest_a')}:"
                 f"- Write a parody of {body.get('guest_a')} responding to the question."
-                f"- {body.get('guest_a')} should interact with or react to Donald Trump."
+                f"- {body.get('guest_a')} should interact with or react to {body.get('guest_b')}."
                 f"{body.get('guest_b')}:"
                 f"- Write a parody of {body.get('guest_b')} replying to both the question and {body.get('guest_a')}'s comment."
                 f"Format it as Name: [speech]."
