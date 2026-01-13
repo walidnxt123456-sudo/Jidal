@@ -95,46 +95,46 @@ class handler(BaseHTTPRequestHandler):
 
             # Save to PostgreSQL
             conn = get_connection()
-            cur = conn.cursor()
-            #
-            cur.execute(
-                """
-                INSERT INTO jdl_ai_logs (
-                topic,
-                guest1,
-                guest2,
-                prompt,
-                response,
-                ai_name,
-                stars,
-                tone,
-                conversation_type
+
+            try:
+                cur = conn.cursor()
+                #
+                cur.execute(
+                    """
+                    INSERT INTO jdl_ai_logs (
+                    topic,
+                    guest1,
+                    guest2,
+                    prompt,
+                    response,
+                    ai_name,
+                    stars,
+                    tone,
+                    conversation_type
+                    )
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    """,
+                    (
+                    body.get("question"),
+                    body.get("guest_a"),
+                    body.get("guest_b"),
+                    prompt,
+                    final_text,
+                    "you.com-express",           # ai_name (explicit, truthful)
+                    5,           # stars (validated in STEP 2)/ hard coded for now/body.get("stars")
+                    "Tone",            #body.get("tone")
+                    "Parody",            #body.get("type")
+                    )
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                """,
-                (
-                body.get("question"),
-                body.get("guest_a"),
-                body.get("guest_b"),
-                prompt,
-                final_text,
-                "you.com-express",           # ai_name (explicit, truthful)
-                5,           # stars (validated in STEP 2)/ hard coded for now/body.get("stars")
-                "Tone",            #body.get("tone")
-                "Parody",            #body.get("type")
-                )
-            )
-            #
-            #cur.execute(
-            #    """
-            #    INSERT INTO jdl_ai_logs (topic, guest1, guest2, prompt, response)
-            #    VALUES (%s, %s, %s, %s, %s)
-            #    """,
-            #    (body.get('question'), body.get('guest_a'), body.get('guest_b'), prompt, final_text)
-            #)
-            conn.commit()
-            cur.close()
-            conn.close()
+                #
+                conn.commit()
+            except Exception as e:
+                print(f"Error: {e}")
+                self.send_error(500, str(e))
+            finally:
+            # This ALWAYS runs, preventing connection leaks
+                cur.close()
+                conn.close()
             
             
             # 6. Return ONLY the string to the frontend

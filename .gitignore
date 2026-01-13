@@ -1,17 +1,8 @@
-# Vercel
 .vercel
-
-# Environment variables
 .env*
 .env*.local
-
-# Python
 .venv/
 __pycache__/
 *.pyc
-
-# Node
 node_modules/
-
-# OS
 .DS_Store

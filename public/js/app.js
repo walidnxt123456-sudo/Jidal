@@ -531,7 +531,7 @@ function renderDiscussionCard(discussion) {
                 </div>
                 
                 <div class="discussion-preview" id="preview-${discussion.id}">
-                    ${preview}
+                    ${discussion.response}
                     ${isLong ? '<span class="read-more" onclick="toggleReadMore(' + discussion.id + ')">Read more</span>' : ''}
                 </div>
                 

@@ -32,62 +32,65 @@ class handler(BaseHTTPRequestHandler):
             
             # Connect to database
             conn = get_connection()
-            cur = conn.cursor()
+            try:
+                cur = conn.cursor()
             
-            # Get discussions with pagination
-            cur.execute(f"""
-                SELECT 
-                    d.id,
-                    d.topic,
-                    d.guest1,
-                    d.guest2,
-                    d.tone,
-                    d.response,
-                    d.stars,
-                    d.conversation_type,
-                    d.created_at,
-                    COALESCE(l.like_count, 0) as likes,
-                    COALESCE(c.comment_count, 0) as comments
-                FROM jdl_ai_logs d
-                LEFT JOIN (
-                    SELECT discussion_id, COUNT(*) as like_count 
-                    FROM jdl_likes 
-                    GROUP BY discussion_id
-                ) l ON d.id = l.discussion_id
-                LEFT JOIN (
-                    SELECT discussion_id, COUNT(*) as comment_count 
-                    FROM jdl_comments 
-                    GROUP BY discussion_id
-                ) c ON d.id = c.discussion_id
-                ORDER BY {order_by}
-                LIMIT %s OFFSET %s
-            """, (limit, offset))
-            
-            discussions = cur.fetchall()
-            
-            # Convert to list of dicts
-            discussions_list = []
-            for row in discussions:
-                discussions_list.append({
-                    'id': row['id'],
-                    'topic': row['topic'],
-                    'guest1': row['guest1'],
-                    'guest2': row['guest2'],
-                    'tone': row['tone'],
-                    'response': row['response'],
-                    'stars': row['stars'],
-                    'type': row['conversation_type'],
-                    'created_at': row['created_at'].isoformat() if row['created_at'] else None,
-                    'likes': row['likes'],
-                    'comments': row['comments']
-                })
-            
-            # Get total count for pagination
-            cur.execute("SELECT COUNT(*) as total FROM jdl_ai_logs")
-            total = cur.fetchone()['total']
-            
-            cur.close()
-            conn.close()
+                # Get discussions with pagination
+                cur.execute(f"""
+                    SELECT 
+                        d.id,
+                        d.topic,
+                        d.guest1,
+                        d.guest2,
+                        d.tone,
+                        d.response,
+                        d.stars,
+                        d.conversation_type,
+                        d.created_at,
+                        COALESCE(l.like_count, 0) as likes,
+                        COALESCE(c.comment_count, 0) as comments
+                    FROM jdl_ai_logs d
+                    LEFT JOIN (
+                        SELECT discussion_id, COUNT(*) as like_count 
+                        FROM jdl_likes 
+                        GROUP BY discussion_id
+                    ) l ON d.id = l.discussion_id
+                    LEFT JOIN (
+                        SELECT discussion_id, COUNT(*) as comment_count 
+                        FROM jdl_comments 
+                        GROUP BY discussion_id
+                    ) c ON d.id = c.discussion_id
+                    ORDER BY {order_by}
+                    LIMIT %s OFFSET %s
+                """, (limit, offset))
+                
+                discussions = cur.fetchall()
+                
+                # Convert to list of dicts
+                discussions_list = []
+                for row in discussions:
+                    discussions_list.append({
+                        'id': row['id'],
+                        'topic': row['topic'],
+                        'guest1': row['guest1'],
+                        'guest2': row['guest2'],
+                        'tone': row['tone'],
+                        'response': row['response'],
+                        'stars': row['stars'],
+                        'type': row['conversation_type'],
+                        'created_at': row['created_at'].isoformat() if row['created_at'] else None,
+                        'likes': row['likes'],
+                        'comments': row['comments']
+                    })
+                
+                # Get total count for pagination
+                cur.execute("SELECT COUNT(*) as total FROM jdl_ai_logs")
+                total = cur.fetchone()['total']
+
+            finally:
+            # This ensures the connection is released immediately
+                cur.close()
+                conn.close()
             
             # Return response
             response = {

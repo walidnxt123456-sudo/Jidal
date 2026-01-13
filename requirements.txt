@@ -1,2 +1,4 @@
 requests==2.31.0
 uv==0.8.18
+psycopg2-binary
+python-dotenv
