@@ -8,68 +8,123 @@
 <body>
 
   <header class="app-header">
-    <h1>Director's Cut</h1>
-    <p>Set the Stage: Choose your guests, define the tone, and ask the question.</p>
+    <h1>JIDAL</h1>
+    <p>Create AI-powered dialogues.</p>
   </header>
 
   <main class="main-container">
-    <form id="talk-show-form" onsubmit="event.preventDefault(); sendQuestion();">
+    <!-- HOME VIEW: Shows when user first opens app -->
+    <div id="home-view" class="home-view">
+      <div class="home-content">
+        <p>Set the Stage: Choose your guests, define the tone, and ask the question.</p>
+        
+        <button id="new-discussion-btn" class="action-button primary-button">
+          🎭 Generate a New Discussion
+        </button>
+        
+		
+		<div class="discussion-feed">
+		  <div class="feed-header">
+			<h2>🔥 Popular Discussions</h2>
+			<div class="feed-filters">
+			  <button class="filter-btn active" data-sort="popular">🔥 Popular</button>
+			  <button class="filter-btn" data-sort="newest">🆕 Newest</button>
+			</div>
+		  </div>
+		  
+		  <div id="feed-content" class="feed-content">
+			<!-- Discussions will be loaded here -->
+			<div class="loading-feed">
+			  <div class="spinner"></div>
+			  <p>Loading discussions...</p>
+			</div>
+		  </div>
+		  
+		  <div id="load-more-container" class="load-more-container" style="display: none;">
+			<button id="load-more-btn" class="load-more-btn">Load More Discussions</button>
+		  </div>
+		  
+		  <div id="no-discussions" class="no-discussions" style="display: none;">
+			<p>No discussions found. Be the first to create one!</p>
+		  </div>
+		</div>
+		
+      </div>
+    </div>
 
-      <section class="control-panel">
-        <h2>👥 Cast & Tone</h2>
-        <div class="input-group">
-          <label for="guest_a">Guest A:</label>
-          <input list="guest_a_list" id="guest_a" type="text" placeholder="e.g., Elon Musk">
-          <datalist id="guest_a_list">
-            <option value="Elon Musk">
-            <option value="Donald Trump">
-            <option value="Aristotle">
-            <option value="Nelson Mandela">
-            <option value="Julius Caesar">
-          </datalist>
+    <!-- FORM VIEW: Shows when creating a new discussion (initially hidden) -->
+    <div id="form-view" class="form-view" style="display: none;">
+      <form id="talk-show-form" onsubmit="event.preventDefault(); sendQuestion();">
+
+        <section class="control-panel">
+          <h2>👥 Cast & Tone</h2>
+          <div class="input-group">
+            <label for="guest_a">Guest A:</label>
+            <input list="guest_a_list" id="guest_a" type="text" placeholder="e.g., Elon Musk">
+            <datalist id="guest_a_list">
+              <option value="Elon Musk">
+              <option value="Donald Trump">
+              <option value="Aristotle">
+              <option value="Nelson Mandela">
+              <option value="Julius Caesar">
+            </datalist>
+          </div>
+
+          <div class="input-group">
+            <label for="guest_b">Guest B:</label>
+            <input list="guest_b_list" id="guest_b" type="text" placeholder="e.g., Aristotle">
+            <datalist id="guest_b_list">
+              <option value="Elon Musk">
+              <option value="Donald Trump">
+              <option value="Aristotle">
+              <option value="Nelson Mandela">
+              <option value="Julius Caesar">
+            </datalist>
+          </div>
+
+          <div class="input-group">
+            <label for="tone">Conversation Tone:</label>
+            <select id="tone">
+              <option value="Funny">Funny</option>
+              <option value="Serious">Serious</option>
+              <option value="Aggressive">Aggressive</option>
+              <option value="Academic">Academic</option>
+              <option value="Sarcastic">Sarcastic</option>
+              <option value="Calm">Calm</option>
+            </select>
+          </div>
+        </section>
+        
+        <section class="control-panel">
+          <h2>Main Event</h2>
+          <div class="input-group">
+            <label for="question">Topic / Opening Question:</label>
+            <input id="question" type="text" placeholder="What should they debate?">
+          </div>
+        </section>
+
+        <div class="form-buttons">
+          <button type="button" class="action-button secondary-button" onclick="returnToHome()">
+            Back to Home
+          </button>
+          <button type="submit" class="action-button">Start Discussion</button>
         </div>
 
-        <div class="input-group">
-          <label for="guest_b">Guest B:</label>
-          <input list="guest_b_list" id="guest_b" type="text" placeholder="e.g., Aristotle">
-          <datalist id="guest_b_list">
-            <option value="Elon Musk">
-            <option value="Donald Trump">
-            <option value="Aristotle">
-            <option value="Nelson Mandela">
-            <option value="Julius Caesar">
-          </datalist>
-        </div>
-
-        <div class="input-group">
-          <label for="tone">Conversation Tone:</label>
-          <select id="tone">
-            <option value="Funny">Funny</option>
-            <option value="Serious">Serious</option>
-            <option value="Aggressive">Aggressive</option>
-            <option value="Academic">Academic</option>
-            <option value="Sarcastic">Sarcastic</option>
-            <option value="Calm">Calm</option>
-          </select>
-        </div>
-      </section>
-      
-      <section class="control-panel">
-        <h2>❓ Main Event</h2>
-        <div class="input-group">
-          <label for="question">Topic / Opening Question:</label>
-          <input id="question" type="text" placeholder="What should they debate?">
-        </div>
-      </section>
-
-      <button type="submit" class="action-button">Start Discussion</button>
-
-    </form>
-  
-    <div class="response-area">
-      <h2>🎬 Live Feed Response</h2>
-      <pre id="response">Set your cast and topic above, then hit 'Start Discussion'!</pre>
-      <button id="return-button" class="action-button secondary-button" onclick="returnBackstage()">Return Backstage / Interrupt Show</button>
+      </form>
+    
+		<div class="response-area">
+		  <h2>🎬 Live Feed Response</h2>
+		  <pre id="response">Set your cast and topic above, then hit 'Start Discussion'!</pre>
+		  <div class="response-buttons">
+			<button id="return-home-btn" class="action-button secondary-button" onclick="returnToHome(false)">
+			  ← Return to Home
+			</button>
+			<button id="save-discussion-btn" class="action-button primary-button" onclick="saveCurrentDiscussion(); showHomeView();">
+			  💾 Save Discussion
+			</button>
+		  </div>
+		</div>
+	  
     </div>
   </main>
 
