@@ -1,4 +1,162 @@
 // ============================================
+// STATE MANAGER BRIDGE (REPLACING GLOBALS)
+// ============================================
+
+// Create state instance
+let stateManager = null;
+
+// Initialize state manager
+function initStateManager() {
+  if (typeof AppState !== 'undefined') {
+    stateManager = new AppState();
+    stateManager.restoreState(); // Restore from localStorage
+    
+    // Make state available globally during migration
+    window.state = stateManager;
+    
+    console.log('State manager initialized');
+    stateManager.logState();
+  } else {
+    console.warn('AppState not available, using old globals');
+  }
+}
+
+// ============================================
+// STATE SUBSCRIBER FOR UI UPDATES
+// ============================================
+
+function setupStateSubscriber() {
+  if (!stateManager) return;
+  
+  // Subscribe to state changes
+  stateManager.subscribe((oldState, newState) => {
+    // Update loading UI when isLoading changes
+    if (oldState.isLoading !== newState.isLoading) {
+      const loadMoreBtn = document.getElementById('load-more-btn');
+      if (loadMoreBtn) {
+        if (newState.isLoading) {
+          loadMoreBtn.disabled = true;
+          loadMoreBtn.innerHTML = '<div class="spinner small"></div> Loading...';
+        } else {
+          loadMoreBtn.disabled = false;
+          loadMoreBtn.textContent = 'Load More Discussions';
+        }
+      }
+    }
+    
+    // Update filter buttons when sort changes
+    if (oldState.currentSort !== newState.currentSort) {
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      const activeBtn = document.querySelector(`.filter-btn[data-sort="${newState.currentSort}"]`);
+      if (activeBtn) {
+        activeBtn.classList.add('active');
+      }
+    }
+    
+    // Log state changes for debugging
+    console.log('State changed:', {
+      from: oldState.currentSort,
+      to: newState.currentSort,
+      loading: newState.isLoading,
+      view: newState.currentView
+    });
+  });
+  
+  console.log('State subscriber setup complete');
+}
+
+
+// Proxy getters for old global variables
+function getGlobalVariable(name) {
+  if (!stateManager) {
+    // Fallback to old globals during transition
+    switch(name) {
+      case 'isGenerating': return window._isGenerating !== undefined ? window._isGenerating : false;
+      case 'discussions': return window._discussions !== undefined ? window._discussions : [];
+      case 'currentPage': return window._currentPage !== undefined ? window._currentPage : 1;
+      case 'currentSort': return window._currentSort !== undefined ? window._currentSort : 'popular';
+      case 'isLoading': return window._isLoading !== undefined ? window._isLoading : false;
+      case 'hasMore': return window._hasMore !== undefined ? window._hasMore : true;
+      default: return undefined;
+    }
+  }
+  
+  // Get from state manager
+  return stateManager.get(name);
+}
+
+// Proxy setters for old global variables
+function setGlobalVariable(name, value) {
+  if (!stateManager) {
+    // Fallback to old globals during transition
+    switch(name) {
+      case 'isGenerating': window._isGenerating = value; break;
+      case 'discussions': window._discussions = value; break;
+      case 'currentPage': window._currentPage = value; break;
+      case 'currentSort': window._currentSort = value; break;
+      case 'isLoading': window._isLoading = value; break;
+      case 'hasMore': window._hasMore = value; break;
+    }
+    return;
+  }
+  
+  // Set in state manager
+  stateManager.set(name, value);
+}
+
+// Create proxy global variables
+Object.defineProperty(window, 'isGenerating', {
+  get() { return getGlobalVariable('isGenerating'); },
+  set(value) { setGlobalVariable('isGenerating', value); }
+});
+
+Object.defineProperty(window, 'discussions', {
+  get() { return getGlobalVariable('discussions'); },
+  set(value) { setGlobalVariable('discussions', value); }
+});
+
+Object.defineProperty(window, 'currentPage', {
+  get() { return getGlobalVariable('currentPage'); },
+  set(value) { setGlobalVariable('currentPage', value); }
+});
+
+Object.defineProperty(window, 'currentSort', {
+  get() { return getGlobalVariable('currentSort'); },
+  set(value) { setGlobalVariable('currentSort', value); }
+});
+
+Object.defineProperty(window, 'isLoading', {
+  get() { return getGlobalVariable('isLoading'); },
+  set(value) { setGlobalVariable('isLoading', value); }
+});
+
+Object.defineProperty(window, 'hasMore', {
+  get() { return getGlobalVariable('hasMore'); },
+  set(value) { setGlobalVariable('hasMore', value); }
+});
+// ============================================
+// EVENT MANAGER BRIDGE (TEMPORARY)
+// ============================================
+
+// Global handler for event manager
+window.handleAppAction = function(action, data, event) {
+  console.log(`[Bridge] Handling action: ${action}`, data);
+  
+  // Map actions to existing functions during migration
+  switch(action) {
+    case 'show-form-view':
+      if (typeof showFormView === 'function') showFormView();
+      break;
+    case 'return-to-home':
+      if (typeof returnToHome === 'function') returnToHome(data.saveDiscussion || false);
+      break;
+    // We'll add more as we migrate
+  }
+};
+
+/*// ============================================
 // GLOBAL VARIABLES
 // ============================================
 let isGenerating = false;
@@ -7,6 +165,122 @@ let currentPage = 1;
 let currentSort = 'popular';
 let isLoading = false;
 let hasMore = true;
+*/
+// ============================================
+// API SERVICE BRIDGE (TEMPORARY)
+// ============================================
+
+// We'll create a bridge so existing code can use the new service
+// This will be removed as we migrate functions
+
+window.apiServiceBridge = {
+  async createDiscussion(payload) {
+    // This will eventually replace sendQuestion()'s fetch call
+    try {
+      const data = await ApiService.createDiscussion(payload);
+      return data;
+    } catch (error) {
+      // Recreate your error handling from sendQuestion()
+      return { output: `❌ Connection Error\n${error.message}` };
+    }
+  },
+  
+  async getDiscussions(page = 1, sort = 'popular') {
+    // This will eventually replace fetchDiscussions()
+    return await ApiService.getDiscussions(page, sort);
+  },
+  
+  async interact(data) {
+    // This will eventually replace toggleLike(), postComment(), rateDiscussion()
+    return await ApiService.interact(data);
+  },
+  
+  async getComments(discussionId) {
+    // This will eventually replace loadComments()
+    return await ApiService.getComments(discussionId);
+  }
+};
+
+// ============================================
+// DISCUSSION SERVICE BRIDGE (TEMPORARY)
+// ============================================
+
+window.discussionServiceBridge = {
+  renderDiscussionCard(discussion) {
+    // Temporary: still use old function, but log that we're migrating
+    console.log('[Bridge] Using old renderDiscussionCard');
+    if (typeof renderDiscussionCard === 'function') {
+      return renderDiscussionCard(discussion);
+    }
+    return '<div>Error: Function not available</div>';
+  },
+  
+  saveToLocalStorage(guestA, guestB, topic, tone, content) {
+    // Use new service
+    const discussion = DiscussionService.prepareForStorage(guestA, guestB, topic, tone, content);
+    return DiscussionService.saveToLocalStorage(discussion);
+  },
+  
+  validateForm(question, guest_a, guest_b, tone) {
+    const validation = DiscussionService.validateDiscussionForm({
+      question, guest_a, guest_b, tone
+    });
+    
+    if (!validation.isValid && validation.errors.length > 0) {
+      alert(validation.errors[0]); // Match your current alert behavior
+      return false;
+    }
+    return true;
+  },
+  
+  preparePayload(question, guest_a, guest_b, tone) {
+    return DiscussionService.prepareSubmissionPayload({
+      question, guest_a, guest_b, tone
+    });
+  },
+  
+  isValidResponse(response) {
+    return DiscussionService.isValidResponseContent(response);
+  }
+};
+
+// ============================================
+// STORAGE SERVICE BRIDGE (TEMPORARY)
+// ============================================
+
+window.storageServiceBridge = {
+  get(key, defaultValue = null) {
+    return StorageService.get(key, defaultValue);
+  },
+  
+  set(key, value) {
+    return StorageService.set(key, value);
+  },
+  
+  remove(key) {
+    return StorageService.remove(key);
+  },
+  
+  clearAppData() {
+    return StorageService.clearAppData();
+  },
+  
+  saveDiscussion(discussion, maxItems = 10) {
+    return StorageService.saveDiscussion(discussion, maxItems);
+  },
+  
+  loadDiscussions(limit = 10) {
+    return StorageService.loadDiscussions(limit);
+  },
+  
+  getDiscussionById(id) {
+    return StorageService.getDiscussionById(id);
+  },
+  
+  deleteDiscussion(id) {
+    return StorageService.deleteDiscussion(id);
+  }
+};
 
 // ============================================
 // VIEW MANAGEMENT FUNCTIONS
@@ -94,45 +368,10 @@ async function saveCurrentDiscussion() {
     }
 }
 
-
 // Save a discussion to localStorage for immediate display
 function saveToLocalStorage(guestA, guestB, topic, tone, content) {
-    try {
-        const discussion = {
-            id: Date.now(),
-            date: new Date().toLocaleDateString('en-US', { 
-                month: 'short', 
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            }),
-            guestA: guestA || 'Guest A',
-            guestB: guestB || 'Guest B',
-            topic: topic || 'Untitled discussion',
-            tone: tone || 'Unknown',
-            content: content.substring(0, 200) + (content.length > 200 ? '...' : ''),
-            fullContent: content
-        };
-        
-        // Get existing discussions from localStorage
-        let discussions = JSON.parse(localStorage.getItem('directorsCutDiscussions') || '[]');
-        
-        // Add new discussion at the beginning
-        discussions.unshift(discussion);
-        
-        // Keep only last 10 discussions
-        if (discussions.length > 10) {
-            discussions = discussions.slice(0, 10);
-        }
-        
-        // Save to localStorage
-        localStorage.setItem('directorsCutDiscussions', JSON.stringify(discussions));
-        
-        console.log('Saved to localStorage:', discussion);
-        
-    } catch (error) {
-        console.error('Error saving to localStorage:', error);
-    }
+  // Use the new service via bridge
+  return window.discussionServiceBridge.saveToLocalStorage(guestA, guestB, topic, tone, content);
 }
 
 
@@ -406,10 +645,17 @@ async function testBackendConnection() {
 
 // Fetch discussions from backend
 async function fetchDiscussions(page = 1, sort = 'popular') {
+  // Use state manager if available
+  if (stateManager) {
+    if (stateManager.get('isLoading')) return { discussions: [], pagination: { has_more: false } };
+    stateManager.startLoading();
+  } else {
+    // Fallback to old globals
     if (isLoading) return { discussions: [], pagination: { has_more: false } };
-    
     isLoading = true;
-    showLoadingState();
+  }
+  
+  showLoadingState();
     
     try {
         console.log(`Fetching discussions: page=${page}, sort=${sort}`);
@@ -452,26 +698,43 @@ async function fetchDiscussions(page = 1, sort = 'popular') {
             pagination: { has_more: false, page: page, total: 0 }
         };
     } finally {
+      // Use state manager if available
+      if (stateManager) {
+        stateManager.stopLoading();
+      } else {
         isLoading = false;
+      }
     }
 }
 
 // Show loading state
 function showLoadingState() {
-    const loadMoreBtn = document.getElementById('load-more-btn');
-    if (loadMoreBtn) {
-        loadMoreBtn.disabled = true;
-        loadMoreBtn.innerHTML = '<div class="spinner small"></div> Loading...';
-    }
+  // Update state manager
+  if (stateManager) {
+    stateManager.startLoading();
+  }
+  
+  // Update UI (keep this for now)
+  const loadMoreBtn = document.getElementById('load-more-btn');
+  if (loadMoreBtn) {
+    loadMoreBtn.disabled = true;
+    loadMoreBtn.innerHTML = '<div class="spinner small"></div> Loading...';
+  }
 }
 
 // Hide loading state
 function hideLoadingState() {
-    const loadMoreBtn = document.getElementById('load-more-btn');
-    if (loadMoreBtn) {
-        loadMoreBtn.disabled = false;
-        loadMoreBtn.textContent = 'Load More Discussions';
-    }
+  // Update state manager
+  if (stateManager) {
+    stateManager.stopLoading();
+  }
+  
+  // Update UI (keep this for now)
+  const loadMoreBtn = document.getElementById('load-more-btn');
+  if (loadMoreBtn) {
+    loadMoreBtn.disabled = false;
+    loadMoreBtn.textContent = 'Load More Discussions';
+  }
 }
 
 // Render a single discussion card
@@ -654,10 +917,20 @@ async function loadDiscussionsFeed(reset = false) {
 
 // Load more discussions
 async function loadMoreDiscussions() {
-    if (isLoading || !hasMore) return;
+  // Use state manager if available
+  if (stateManager) {
+    if (stateManager.get('isLoading') || !stateManager.get('hasMore')) return;
     
+    // Increment page in state
+    const nextPage = stateManager.get('currentPage') + 1;
+    stateManager.set('currentPage', nextPage);
+  } else {
+    // Fallback to old globals
+    if (isLoading || !hasMore) return;
     currentPage++;
-    await loadDiscussionsFeed(false);
+  }
+  
+  await loadDiscussionsFeed(false);
 }
 
 // Toggle read more/less
@@ -884,19 +1157,25 @@ function shareDiscussion(discussionId) {
 
 // Change sort filter
 function changeSort(sortType) {
-    if (sortType === currentSort) return;
-    
+  // Use state manager if available
+  if (stateManager && stateManager.get('currentSort') === sortType) return;
+  
+  if (stateManager) {
+    stateManager.changeSort(sortType);
+  } else {
+    // Fallback to old globals
     currentSort = sortType;
     currentPage = 1;
-    
-    // Update active filter button
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    document.querySelector(`.filter-btn[data-sort="${sortType}"]`).classList.add('active');
-    
-    // Reload discussions
-    loadDiscussionsFeed(true);
+  }
+  
+  // Update active filter button
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  document.querySelector(`.filter-btn[data-sort="${sortType}"]`).classList.add('active');
+  
+  // Reload discussions
+  loadDiscussionsFeed(true);
 }
 
 // ============================================
@@ -957,6 +1236,12 @@ function loadDiscussions() {
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM loaded - initializing app...');
+
+	// Initialize state manager FIRST
+	initStateManager();
+
+	// Setup state subscriber for UI updates
+	setupStateSubscriber();
     
     // Don't call loadDiscussions() anymore - we're using the new feed system
     
@@ -1032,3 +1317,30 @@ document.addEventListener('DOMContentLoaded', function() {
     showHomeView();
     console.log('App initialization complete');
 });
+
+// ============================================
+// TEMPORARY STORAGE TEST
+// ============================================
+
+// Run this once to test the storage service
+if (typeof StorageService !== 'undefined') {
+  console.log('🔧 Testing Storage Service...');
+  
+  // Test 1: Save a test item
+  const testSaved = StorageService.set('__test_key__', { test: 'data', timestamp: Date.now() });
+  console.log('Test save:', testSaved ? '✅ Success' : '❌ Failed');
+  
+  // Test 2: Retrieve the test item
+  const testRetrieved = StorageService.get('__test_key__', {});
+  console.log('Test retrieve:', testRetrieved.test === 'data' ? '✅ Success' : '❌ Failed');
+  
+  // Test 3: Clean up
+  const testRemoved = StorageService.remove('__test_key__');
+  console.log('Test remove:', testRemoved ? '✅ Success' : '❌ Failed');
+  
+  // Test 4: Get storage stats
+  const stats = StorageService.getStorageStats();
+  console.log('Storage stats:', stats);
+  
+  console.log('🔧 Storage Service Test Complete');
+}
